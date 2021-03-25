@@ -1,25 +1,24 @@
 import { useState, useCallback, useEffect } from "react";
 
-// export type IUseAsync<T> = (T | undefined | boolean)[]; // [T | undefined, boolean];
-export type IUseAsync<T> = [T | undefined, boolean];
+export type IUseAsyncGettor<T> = (...yourFunctionArgs: any[]) => Promise<T>;
 
-export function useAsync<T>(gettor: (...acceptsRest: any[]) => Promise<T>, rest: any[]): IUseAsync<T> {
-  const [retval, setRetval] = useState<T | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
+export type IUseAsync<T> = [T | undefined, boolean, Error | undefined, () => void]; // value, isLoading, Error, refresh()
+
+export function useAsync<T, F extends IUseAsyncGettor<T>>(gettor: F, rest: Parameters<F>): IUseAsync<T> {
+  const [tuple, setTuple] = useState<IUseAsync<T>>([undefined, true, undefined, () => Promise.resolve(undefined as any)]);
   const [parameters, setParameters] = useState(rest);
 
   if (parameters !== rest && parameters.some((_, i) => parameters[i] !== rest[i])) setParameters(rest); // change detection on parameters
 
-  const callAsyncFn = useCallback(() => {
-    setRetval(undefined);
-    setIsLoading(true);
-    gettor.apply(null, parameters).then(val => {
-      setRetval(val);
-      setIsLoading(false);
-    });
+  const callAsyncFn: () => void = useCallback(() => {
+    setTuple([undefined, true, undefined, callAsyncFn]);
+    return gettor
+      .apply(null, parameters)
+      .then(val => setTuple([val, false, undefined, callAsyncFn]))
+      .catch(er => setTuple([undefined, false, er, callAsyncFn]));
   }, [gettor, parameters]);
 
   useEffect(callAsyncFn, [callAsyncFn]);
 
-  return [retval, isLoading];
+  return tuple;
 }
