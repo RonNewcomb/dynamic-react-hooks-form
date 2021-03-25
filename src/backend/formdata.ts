@@ -1,4 +1,4 @@
-import { ISection } from "./ISuperDynamicForm";
+import { ISection } from "../SuperDynamicForm/ISuperDynamicForm";
 
 export const mockDataFromServer: ISection[] = [
     {

@@ -1,8 +1,8 @@
-import { getData } from "./api";
-import { ISection } from "./ISuperDynamicForm";
-import { Loading } from "./Loading";
-import { SuperDynamicForm } from "./SuperDynamicForm";
-import { useAsync } from "./useAsync";
+import { getData } from "./backend/api";
+import { useAsync } from "./util/useAsync";
+import { Loading } from "./util/Loading";
+import { ISection } from "./SuperDynamicForm/ISuperDynamicForm";
+import { SuperDynamicForm } from "./SuperDynamicForm/SuperDynamicForm";
 
 export const App = () => {
   const [formData, isLoading, noFormData] = useAsync<ISection[], typeof getData>(getData, "query", "endpoint");
