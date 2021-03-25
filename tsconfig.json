@@ -12,7 +12,7 @@
     "module": "esnext",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "noEmit": false,
     "lib": [
       "dom",
       "dom.iterable",
