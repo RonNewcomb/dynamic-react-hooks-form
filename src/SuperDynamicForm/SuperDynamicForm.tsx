@@ -1,13 +1,13 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { FieldGroup } from "./FieldGroup";
-import { Field } from "./Field";
-import { Options } from "./Options";
-import { IField, ISection } from "./ISuperDynamicForm";
+import type { IField, ISection } from "./ISuperDynamicForm";
+import { DynFieldGroup } from "./DynFieldGroup";
+import { DynInputField } from "./DynInputField";
+import { DynOptions } from "./DynOptions";
 
 const fieldMeetsCondition = (values: Record<string, string>) => (field: IField): boolean => {
-  if (field.conditional && field.conditional.field) {
-    const segments = field.conditional.field.split("_");
+  if (field.conditional && field.conditional.fieldId) {
+    const segments = field.conditional.fieldId.split("_");
     const fieldId = segments[segments.length - 1];
     return values[fieldId] === field.conditional.value;
   }
@@ -19,14 +19,9 @@ interface IProps {
 }
 
 export const SuperDynamicForm = ({ formData }: IProps) => {
-  // state to track the current page ID of the form
-  const [page, setPage] = useState(0);
-
-  // state to track the current form data that will be displayed
-  const [currentPageData, setCurrentPageData] = useState(formData[page]);
-
-  // track the values of the form fields
-  const [values, setValues] = useState({} as Record<string, string>);
+  const [page, setPage] = useState(0); // state to track the current page ID of the form
+  const [currentPageData, setCurrentPageData] = useState(formData[page]); // state to track the current form data that will be displayed
+  const [values, setValues] = useState({} as Record<string, string>); // track the values of the form fields
 
   // this effect will run when the `page` changes
   useEffect(() => {
@@ -34,12 +29,12 @@ export const SuperDynamicForm = ({ formData }: IProps) => {
     setCurrentPageData(upcomingPageData);
     setValues(currentValues => {
       const newValues = upcomingPageData.fields.reduce((obj, field) => {
-        if (field.component === "field_group") {
+        if (field.type === "field_group") {
           for (const subField of field.fields || []) {
-            obj[subField._uid] = "";
+            obj[subField.id] = "";
           }
         } else {
-          obj[field._uid] = "";
+          obj[field.id] = "";
         }
 
         return obj;
@@ -56,26 +51,19 @@ export const SuperDynamicForm = ({ formData }: IProps) => {
       currentValues[fieldId] = value;
       return currentValues;
     });
-
-    // this just fakes that we've updated the `currentPageData` to force a re-render in React
-    setCurrentPageData(currentPageData => {
-      return Object.assign({}, currentPageData);
-    });
+    setCurrentPageData(currentPageData => Object.assign({}, currentPageData)); //  force re-render
   };
 
   const navigatePages = (direction: string) => () => {
     const findNextPage = (page: number): number => {
       const upcomingPageData = formData[page];
-      if (upcomingPageData.conditional && upcomingPageData.conditional.field) {
+      if (upcomingPageData.conditional && upcomingPageData.conditional.fieldId) {
         // we're going to a conditional page, make sure it's the right one
-        const segments = upcomingPageData.conditional.field.split("_");
+        const segments = upcomingPageData.conditional.fieldId.split("_");
         const fieldId = segments[segments.length - 1];
-
         const fieldToMatchValue = values[fieldId];
-
         if (fieldToMatchValue !== upcomingPageData.conditional.value) {
-          // if we didn't find a match, try the next page
-          return findNextPage(direction === "next" ? page + 1 : page - 1);
+          return findNextPage(direction === "next" ? page + 1 : page - 1); // if we didn't find a match, try the next page
         }
       }
       // all tests for the page we want to go to pass, so go to it
@@ -97,21 +85,20 @@ export const SuperDynamicForm = ({ formData }: IProps) => {
     <form onSubmit={onSubmit}>
       <h2>{currentPageData.label}</h2>
       {currentPageData.fields.filter(fieldMeetsCondition(values)).map(field => {
-        switch (field.component) {
+        switch (field.type) {
+          case "section":
           case "field_group":
-            return (
-              <FieldGroup
-                key={field._uid}
-                field={field}
-                fieldChanged={fieldChanged}
-                // should probably only slice out the required values, but ¯\_(ツ)_/¯
-                values={values}
-              />
-            );
-          case "options":
-            return <Options key={field._uid} field={field} fieldChanged={fieldChanged} value={values[field._uid]} />;
+            return <DynFieldGroup key={field.id} field={field} fieldChanged={fieldChanged} values={values} />;
+          case "pick1":
+            return <DynOptions key={field.id} field={field} fieldChanged={fieldChanged} value={values[field.id]} />;
+          case "text":
+            return <DynInputField key={field.id} type="text" field={field} fieldChanged={fieldChanged} value={values[field.id]} />;
+          case "email":
+            return <DynInputField key={field.id} type="email" field={field} fieldChanged={fieldChanged} value={values[field.id]} />;
+          case "number":
+            return <DynInputField key={field.id} type="number" field={field} fieldChanged={fieldChanged} value={values[field.id]} />;
           default:
-            return <Field key={field._uid} field={field} fieldChanged={fieldChanged} value={values[field._uid]} />;
+            return <div>Unknown field type '${field.type}'</div>;
         }
       })}
       {page > 0 && <button onClick={prevPage}>Back</button>}&nbsp;

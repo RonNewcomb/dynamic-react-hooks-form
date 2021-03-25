@@ -1,24 +1,25 @@
 
+export type SuperDynamicFormFieldTypes = 'section' | 'field_group' | 'pick1' | 'text' | 'email' | 'number';
+
 export interface ISection {
-    component: string;
+    id: string;
+    type: SuperDynamicFormFieldTypes;
     label: string;
-    _uid: string;
     fields: IField[];
     conditional?: ICondition;
 }
 
 export interface ICondition {
     value: string;
-    field: string; // field ID
+    fieldId: string;
 }
 
 export interface IField {
-    component: string;
+    id: string;
     label: string;
-    type?: string;
-    _uid: string;
-    options?: IOption[];    // if component is a select or somesuch
-    fields?: IField[];      // if component == field_group
+    type: SuperDynamicFormFieldTypes;
+    options?: IOption[];    // if type is a select or somesuch
+    fields?: IField[];      // if type == 'field_group'
     conditional?: ICondition;
 }
 
