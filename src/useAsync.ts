@@ -2,9 +2,13 @@ import { useState, useCallback, useEffect } from "react";
 
 export type IUseAsyncGettor<T> = (...yourFunctionArgs: any[]) => Promise<T>;
 
-export type IUseAsync<T> = [T | undefined, boolean, Error | undefined, () => void]; // value, isLoading, Error, refresh()
+/** [value, isLoading, Error, refresh()] */
+export type IUseAsync<T> = [T | undefined, boolean, Error | undefined, () => void];
 
-export function useAsync<T, F extends IUseAsyncGettor<T>>(gettor: F, rest: Parameters<F>): IUseAsync<T> {
+/** Type arguments are <return_value's_type, "typeof" gettor function> ; 
+ * Parameters are gettor function followed by the gettor's parameters ; 
+ * Returns a tuple  [ return_value, isLoading, Error, refresh( ) ] */
+export function useAsync<T, F extends IUseAsyncGettor<T>>(gettor: F, ...rest: Parameters<F>): IUseAsync<T> {
   const [tuple, setTuple] = useState<IUseAsync<T>>([undefined, true, undefined, () => Promise.resolve(undefined as any)]);
   const [parameters, setParameters] = useState(rest);
 
