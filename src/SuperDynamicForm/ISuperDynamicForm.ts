@@ -28,6 +28,6 @@ export interface IOption {
 export interface IOptionsDetail {
     atLeast?: number; // default 1, please
     atMost?: number; // default 1, please
-    options?: IOption[];
-    optionsAt?: string;
+    options?: IOption[]; // if blank, .optionsAt must have URL to get list
+    optionsAt?: string;  // if blank, .options must have list
 }

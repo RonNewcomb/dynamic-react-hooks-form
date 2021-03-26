@@ -1,29 +1,30 @@
 import type { IField } from "./ISuperDynamicForm";
-import { renderSubfields } from "./SuperDynamicForm";
+import { IUtilityBelt, renderSubfields } from "./SuperDynamicForm";
 
 interface IProps {
   field: IField;
+  fns: IUtilityBelt;
 }
 
 interface IDynInputFieldProps extends IProps {
   type: "text" | "email" | "tel" | "url" | "number" | "password";
 }
 
-export const DynFieldGroup = ({ field }: IProps) => (
+export const DynFieldGroup = ({ field, fns }: IProps) => (
   <fieldset key={field.id}>
     <h3>{field.label}</h3>
-    {renderSubfields(field)}
+    {renderSubfields(field, fns)}
   </fieldset>
 );
 
-export const DynInputField = ({ field, type }: IDynInputFieldProps) => (
+export const DynInputField = ({ field, type, fns }: IDynInputFieldProps) => (
   <div key={field.id}>
     <label htmlFor={field.id}>{field.label}</label>
-    <input type={type || "text"} id={field.id} name={field.id} value={field.value} onChange={e => (field.value = e.target.value)} />
+    <input type={type || "text"} id={field.id} name={field.id} value={field.value} onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)} />
   </div>
 );
 
-export const DynRadios = ({ field }: IProps) => (
+export const DynRadios = ({ field, fns }: IProps) => (
   <div>
     <h3>{field.label}</h3>
     {field.optionsDetail &&
@@ -35,7 +36,7 @@ export const DynRadios = ({ field }: IProps) => (
             name={field.id}
             value={option.value}
             checked={field.value === option.value}
-            onChange={e => (field.value = e.target.value)}
+            onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)}
           />
           {option.label}
         </label>
