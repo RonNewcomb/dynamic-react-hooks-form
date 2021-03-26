@@ -1,5 +1,5 @@
 import type { IField } from "./ISuperDynamicForm";
-import { DynInputField } from "./DynInputField";
+import { renderSubfields } from "./SuperDynamicForm";
 
 interface IProps {
   field: IField;
@@ -8,8 +8,6 @@ interface IProps {
 export const DynFieldGroup = ({ field }: IProps) => (
   <fieldset key={field.id}>
     <h3>{field.label}</h3>
-    {(field.fields || []).map(each => (
-      <DynInputField key={each.id} type={field.type} field={each} />
-    ))}
+    {renderSubfields(field)}
   </fieldset>
 );

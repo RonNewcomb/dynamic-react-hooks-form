@@ -10,12 +10,14 @@ export interface IField {
     id: string;
     type: SuperDynamicFormFieldTypes;
     label: string;
-    options?: IOption[];    // if type is a select or somesuch
-    optionsAt?: string;
-    fields?: IField[];      // if type == 'field_group'
-    conditional?: ICondition;
-    hasConditionalFields?: boolean;
-    value?: string; // raw value that user inputted into HTMLInputElement
+
+    value?: string; // raw value that user inputted into HTMLInputElement; type is NOT section or field_group
+
+    fields?: IField[];      // if type == 'field_group' or 'section'
+
+    optionsDetail?: IOptionsDetail; // if type is 'pick1'
+
+    hasConditionalFields?: boolean; // if true then requires pseudosubmit onChange
 }
 
 export interface IOption {
@@ -24,8 +26,8 @@ export interface IOption {
 }
 
 export interface IOptionsDetail {
-    options?: IOption[];    // if type is a select or somesuch
-    optionsAt?: string;
     atLeast?: number; // default 1, please
     atMost?: number; // default 1, please
+    options?: IOption[];
+    optionsAt?: string;
 }

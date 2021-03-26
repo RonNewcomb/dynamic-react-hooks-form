@@ -2,7 +2,7 @@ import type { IField } from "./ISuperDynamicForm";
 
 interface IProps {
   field: IField;
-  type: string;
+  type: "text" | "email" | "tel" | "url" | "number" | "password";
 }
 
 export const DynInputField = ({ field, type }: IProps) => (
