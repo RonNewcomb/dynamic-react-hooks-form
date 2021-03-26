@@ -5,6 +5,17 @@ interface IProps {
   [key: string]: React.CSSProperties | string;
 }
 
+/**
+ * Allows defining and naming some keyframes for CSS animations
+ *
+ * Usage:
+ *
+ *   <Keyframes name="oscillate" _0={{ opacity: 0.9 }} _100={{ opacity: 0.2 }} />
+ *
+ *   <Keyframes name="oscillate" from={{ opacity: 0.9 }} to={{ opacity: 0.2 }} />
+ *
+ * Client code then uses the "animation" CSS properties to refer to the Name given to Keyframes
+ */
 export const Keyframes = (props: IProps) => {
   const toCss = (cssObject: React.CSSProperties | string): string =>
     typeof cssObject === "string"

@@ -22,7 +22,7 @@ export async function pseudoSubmit(formAsIs: IField[]): Promise<IField[]> {
 }
 
 export async function submitDynamicForm(form: IField[]): Promise<boolean> {
-    console.log(JSON.stringify(form));
+    //console.log(JSON.stringify(form, null, 4));
     await milliseconds(Math.random() * 2000 + 1000);
     if (Math.random() < 0.1) throw Error("HTTP 500: Server timed out?");
     return true;
