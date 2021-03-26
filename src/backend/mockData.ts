@@ -1,4 +1,4 @@
-import { IOption, ISection } from "../SuperDynamicForm/ISuperDynamicForm";
+import { IOption, IField } from "../SuperDynamicForm/ISuperDynamicForm";
 
 export const mockOptionsFromServer = (optionsAtUrl: string) => {
     switch (optionsAtUrl) {
@@ -23,7 +23,7 @@ export const mockOptionsFromServer = (optionsAtUrl: string) => {
     }
 }
 
-export const mockDataFromServer: (formAsIs?: ISection[]) => ISection[] = () => [
+export const mockDataFromServer: (formAsIs?: IField[]) => IField[] = () => [
     {
         type: "section",
         label: "Page 1",
