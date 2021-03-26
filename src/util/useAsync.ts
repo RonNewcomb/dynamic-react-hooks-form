@@ -28,15 +28,15 @@ export function useAsync<T, F extends IUseAsyncGettor<T>>(gettor: F, ...rest: Pa
 
   if (parameters !== rest && parameters.some((_, i) => parameters[i] !== rest[i])) setParameters(rest); // change detection on parameters
 
-  const callAsyncFn: () => void = useCallback(() => {
-    setTuple([undefined, true, undefined, callAsyncFn]);
+  const callGettor: () => void = useCallback(() => {
+    setTuple([undefined, true, undefined, callGettor]);
     return gettor
       .apply(null, parameters)
-      .then(val => setTuple([val, false, undefined, callAsyncFn]))
-      .catch(er => setTuple([undefined, false, er, callAsyncFn]));
+      .then(val => setTuple([val, false, undefined, callGettor]))
+      .catch(er => setTuple([undefined, false, er, callGettor]));
   }, [gettor, parameters]);
 
-  useEffect(callAsyncFn, [callAsyncFn]);
+  useEffect(callGettor, [callGettor]);
 
   return tuple;
 }

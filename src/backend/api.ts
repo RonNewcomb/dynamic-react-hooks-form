@@ -20,3 +20,10 @@ export async function pseudoSubmit(formAsIs: ISection[]): Promise<ISection[]> {
     if (Math.random() < 0.1) throw Error("HTTP 500: Server timed out?");
     return mockDataFromServer(formAsIs);
 }
+
+export async function submitDynamicForm(form: ISection[]): Promise<boolean> {
+    console.log(JSON.stringify(form));
+    await milliseconds(Math.random() * 2000 + 1000);
+    if (Math.random() < 0.1) throw Error("HTTP 500: Server timed out?");
+    return true;
+}

@@ -19,11 +19,21 @@ export interface IField {
     label: string;
     type: SuperDynamicFormFieldTypes;
     options?: IOption[];    // if type is a select or somesuch
+    optionsAt?: string;
     fields?: IField[];      // if type == 'field_group'
     conditional?: ICondition;
+    hasConditionalFields?: boolean;
+    value?: string; // raw value that user inputted into HTMLInputElement
 }
 
 export interface IOption {
     label: string;
     value: string;
+}
+
+export interface IOptionsDetail {
+    options?: IOption[];    // if type is a select or somesuch
+    optionsAt?: string;
+    atLeast?: number; // default 1, please
+    atMost?: number; // default 1, please
 }

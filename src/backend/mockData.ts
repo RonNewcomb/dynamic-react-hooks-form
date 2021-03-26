@@ -1,8 +1,24 @@
 import { IOption, ISection } from "../SuperDynamicForm/ISuperDynamicForm";
 
-export const mockOptionsFromServer = (optionsAt: string) => {
-    switch (optionsAt) {
+export const mockOptionsFromServer = (optionsAtUrl: string) => {
+    switch (optionsAtUrl) {
+        case "/options/bd90f44a-d479-49ae-ad66-c2c475dca66b":
+            return [
+                { label: "Option 1", value: "one" },
+                { label: "Option 2", value: "two" }
+            ];
+        case "/options/a15bef56-ab67-4b98-a781-4441cc3bba56":
+            return [
+                { label: "More Option 1", value: "one" },
+                { label: "More Option 2", value: "two" }
+            ];
+        case "/options/3ca9237d-e225-4950-a298-f81ce996cb85":
+            return [
+                { label: "Third Option 1", value: "one" },
+                { label: "Third Option 2", value: "two" }
+            ];
         default:
+            console.error('HTTP 404: ' + optionsAtUrl);
             return [] as IOption[];
     }
 }
@@ -51,6 +67,8 @@ export const mockDataFromServer: (formAsIs?: ISection[]) => ISection[] = () => [
                 label: "Radio Buttons",
                 type: "pick1",
                 id: "bd90f44a-d479-49ae-ad66-c2c475dca66b",
+                hasConditionalFields: true,
+                optionsAt: "/options/bd90f44a-d479-49ae-ad66-c2c475dca66b",
                 options: [
                     { label: "Option 1", value: "one" },
                     { label: "Option 2", value: "two" }
@@ -59,7 +77,7 @@ export const mockDataFromServer: (formAsIs?: ISection[]) => ISection[] = () => [
             {
                 label: "Conditional Field",
                 type: "text",
-                id: "bd90f44a-d479-49ae-ad66-c2c475daa66b",
+                id: "b490f44a-d479-49ae-ad66-c2c475daa66b",
                 conditional: {
                     value: "two",
                     fieldId:
@@ -81,6 +99,7 @@ export const mockDataFromServer: (formAsIs?: ISection[]) => ISection[] = () => [
                 label: "More radio buttons",
                 type: "pick1",
                 id: "a15bef56-ab67-4b98-a781-4441cc3bba56",
+                optionsAt: "/options/a15bef56-ab67-4b98-a781-4441cc3bba56",
                 options: [
                     { label: "Option 1", value: "one" },
                     { label: "Option 2", value: "two" }
@@ -102,6 +121,7 @@ export const mockDataFromServer: (formAsIs?: ISection[]) => ISection[] = () => [
                 label: "Something to toggle",
                 type: "pick1",
                 id: "3ca9237d-e225-4950-a298-f81ce996cb85",
+                optionsAt: "/options/3ca9237d-e225-4950-a298-f81ce996cb85",
                 options: [
                     { label: "Option 1", value: "one" },
                     { label: "Option 2", value: "two" }

@@ -6,20 +6,26 @@ interface IProps {
 }
 
 export const Keyframes = (props: IProps) => {
-  const toCss = (cssObject: React.CSSProperties | string) =>
+  const toCss = (cssObject: React.CSSProperties | string): string =>
     typeof cssObject === "string"
       ? cssObject
-      : Object.keys(cssObject).reduce((accumulator, key) => {
-          const cssKey = key.replace(/[A-Z]/g, v => `-${v.toLowerCase()}`);
-          const cssValue = (cssObject as any)[key].toString().replace("'", "");
-          return `${accumulator}${cssKey}:${cssValue};`;
-        }, "");
+      : Object.keys(cssObject)
+          .map(key => {
+            const cssKey = key.replace(/[A-Z]/g, v => `-${v.toLowerCase()}`);
+            const cssValue = (cssObject as any)[key].toString().replace("'", "");
+            return `${cssKey}:${cssValue};`;
+          })
+          .join("");
 
   return (
     <style>
       {`@keyframes ${props.name} {
         ${Object.keys(props)
-          .map(k => (["from", "to"].includes(k) ? `${k} { ${toCss(props[k])} }` : /^_[0-9]+$/.test(k) ? `${k.replace("_", "")}% { ${toCss(props[k])} }` : ""))
+          .map(key => {
+            if (["from", "to"].includes(key)) return `${key} { ${toCss(props[key])} }`;
+            if (/^_[0-9]+$/.test(key)) return `${key.replace("_", "")}% { ${toCss(props[key])} }`;
+            return "";
+          })
           .join(" ")}
       }`}
     </style>

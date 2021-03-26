@@ -1,110 +1,61 @@
 import * as React from "react";
-import { useState, useEffect } from "react";
-import type { IField, ISection } from "./ISuperDynamicForm";
+import { useState } from "react";
+import type { ISection } from "./ISuperDynamicForm";
 import { DynFieldGroup } from "./DynFieldGroup";
 import { DynInputField } from "./DynInputField";
-import { DynOptions } from "./DynOptions";
-
-const fieldMeetsCondition = (values: Record<string, string>) => (field: IField): boolean => {
-  if (field.conditional && field.conditional.fieldId) {
-    const segments = field.conditional.fieldId.split("_");
-    const fieldId = segments[segments.length - 1];
-    return values[fieldId] === field.conditional.value;
-  }
-  return true;
-};
+import { DynRadios } from "./DynRadios";
+import { useAsync } from "../util/useAsync";
+import { Loading } from "../util/Loading";
+import { getDynamicForm, getOptions, pseudoSubmit, submitDynamicForm } from "../backend/api";
 
 interface IProps {
-  formData: ISection[];
+  query: string;
+  endpoint: string;
 }
 
-export const SuperDynamicForm = ({ formData }: IProps) => {
-  const [page, setPage] = useState(0); // state to track the current page ID of the form
-  const [currentPageData, setCurrentPageData] = useState(formData[page]); // state to track the current form data that will be displayed
-  const [values, setValues] = useState({} as Record<string, string>); // track the values of the form fields
+export const SuperDynamicForm = ({ query, endpoint }: IProps) => {
+  const [sections, isLoading, serverError] = useAsync<ISection[], typeof getDynamicForm>(getDynamicForm, query, endpoint);
+  const [rerender, setRerender] = useState(1);
 
-  // this effect will run when the `page` changes
-  useEffect(() => {
-    const upcomingPageData = formData[page];
-    setCurrentPageData(upcomingPageData);
-    setValues(currentValues => {
-      const newValues = upcomingPageData.fields.reduce((obj, field) => {
-        if (field.type === "field_group") {
-          for (const subField of field.fields || []) {
-            obj[subField.id] = "";
-          }
-        } else {
-          obj[field.id] = "";
-        }
+  const reRender = () => setRerender(rerender + 1);
 
-        return obj;
-      }, {} as Record<string, string>);
+  if (isLoading) return <Loading />;
+  if (serverError) return <>{serverError.message}</>;
+  if (!sections || !sections.length) return <>Nothing to display</>;
 
-      return Object.assign({}, newValues, currentValues);
-    });
-  }, [page, formData]);
-
-  // callback provided to components to update the main list of form values
-  const fieldChanged = (fieldId: string, value: string) => {
-    // use a callback to find the field in the value list and update it
-    setValues(currentValues => {
-      currentValues[fieldId] = value;
-      return currentValues;
-    });
-    setCurrentPageData(currentPageData => Object.assign({}, currentPageData)); //  force re-render
-  };
-
-  const navigatePages = (direction: string) => () => {
-    const findNextPage = (page: number): number => {
-      const upcomingPageData = formData[page];
-      if (upcomingPageData.conditional && upcomingPageData.conditional.fieldId) {
-        // we're going to a conditional page, make sure it's the right one
-        const segments = upcomingPageData.conditional.fieldId.split("_");
-        const fieldId = segments[segments.length - 1];
-        const fieldToMatchValue = values[fieldId];
-        if (fieldToMatchValue !== upcomingPageData.conditional.value) {
-          return findNextPage(direction === "next" ? page + 1 : page - 1); // if we didn't find a match, try the next page
-        }
-      }
-      // all tests for the page we want to go to pass, so go to it
-      return page;
-    };
-
-    setPage(findNextPage(direction === "next" ? page + 1 : page - 1));
-  };
-
-  const nextPage = navigatePages("next");
-  const prevPage = navigatePages("prev");
-
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const submitting = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // todo - send data somewhere
+    submitDynamicForm(sections);
   };
 
   return (
-    <form onSubmit={onSubmit}>
-      <h2>{currentPageData.label}</h2>
-      {currentPageData.fields.filter(fieldMeetsCondition(values)).map(field => {
-        switch (field.type) {
-          case "section":
-          case "field_group":
-            return <DynFieldGroup key={field.id} field={field} fieldChanged={fieldChanged} values={values} />;
-          case "pick1":
-            return <DynOptions key={field.id} field={field} fieldChanged={fieldChanged} value={values[field.id]} />;
-          case "text":
-            return <DynInputField key={field.id} type="text" field={field} fieldChanged={fieldChanged} value={values[field.id]} />;
-          case "email":
-            return <DynInputField key={field.id} type="email" field={field} fieldChanged={fieldChanged} value={values[field.id]} />;
-          case "number":
-            return <DynInputField key={field.id} type="number" field={field} fieldChanged={fieldChanged} value={values[field.id]} />;
-          default:
-            return <div>Unknown field type '${field.type}'</div>;
-        }
-      })}
-      {page > 0 && <button onClick={prevPage}>Back</button>}&nbsp;
-      {page < formData.length - 1 && <button onClick={nextPage}>Next</button>}
+    <form onSubmit={submitting} onClick={reRender} onChange={reRender}>
+      {(sections || []).map(section => (
+        <React.Fragment key={section.id}>
+          <h2>{section.label}</h2>
+          {section.fields.map(field => (
+            <React.Fragment key={field.id}>
+              {field.type === "section" ? (
+                <DynFieldGroup field={field} />
+              ) : field.type === "field_group" ? (
+                <DynFieldGroup field={field} />
+              ) : field.type === "pick1" ? (
+                <DynRadios field={field} />
+              ) : field.type === "text" ? (
+                <DynInputField field={field} type="text" />
+              ) : field.type === "email" ? (
+                <DynInputField field={field} type="email" />
+              ) : field.type === "number" ? (
+                <DynInputField field={field} type="number" />
+              ) : (
+                <div>Unknown field type '${field.type}'</div>
+              )}
+            </React.Fragment>
+          ))}
+        </React.Fragment>
+      ))}
       <hr />
-      <button onClick={() => console.log(values)}>Dump form data</button>
+      <button type="submit">Submit</button>
     </form>
   );
 };
