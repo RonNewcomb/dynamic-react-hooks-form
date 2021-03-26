@@ -2,17 +2,17 @@ import { IOption, IField } from "../SuperDynamicForm/ISuperDynamicForm";
 
 export const mockOptionsFromServer = (optionsAtUrl: string) => {
     switch (optionsAtUrl) {
-        case "/options/bd90f44a-d479-49ae-ad66-c2c475dca66b":
+        case "/options/s2.radios1":
             return [
                 { label: "Option 1", value: "one" },
                 { label: "Option 2", value: "two" }
             ];
-        case "/options/a15bef56-ab67-4b98-a781-4441cc3bba56":
+        case "/options/s3.moreradio":
             return [
                 { label: "More Option 1", value: "one" },
                 { label: "More Option 2", value: "two" }
             ];
-        case "/options/3ca9237d-e225-4950-a298-f81ce996cb85":
+        case "/options/s4.toggle":
             return [
                 { label: "Third Option 1", value: "one" },
                 { label: "Third Option 2", value: "two" }
@@ -23,54 +23,85 @@ export const mockOptionsFromServer = (optionsAtUrl: string) => {
     }
 }
 
+interface ICond {
+    dependentId: string;
+    independentId: string;
+    valueOfIndependent: string;
+}
+
+function flatten(array: IField[], retval: IField[] = []): IField[] {
+    array.forEach(item => {
+        if (item.id) retval.push(item);
+        if (item.fields) flatten(item.fields, retval);
+    });
+    return retval;
+}
+
 export const mockDataFromServer = (formAsIs?: IField[]) => {
-    const fields: IField[] = [
+    const conditionals: ICond[] = [
+        {
+            dependentId: "s2.condtext",
+            independentId: "s2.radios1",
+            valueOfIndependent: "two",
+        },
+        {
+            dependentId: "s3",
+            valueOfIndependent: "one",
+            independentId: "s2.radios1"
+        },
+        {
+            dependentId: "s4",
+            valueOfIndependent: "two",
+            independentId: "s2.radios1"
+        },
+    ];
+
+    const fields: IField[] = formAsIs || [
         {
             type: "section",
             label: "Page 1",
-            id: "0c946643-5a83-4545-baea-055b27b51e8a",
+            id: "s1",
             fields: [
                 {
                     type: "field_group",
                     label: "Name",
-                    id: "eb169f76-4cd9-4513-b673-87c5c7d27e02",
+                    id: "s1.g1",
                     fields: [
                         {
                             label: "First Name",
                             type: "text",
-                            id: "5b9b79d2-32f2-42a1-b89f-203dfc0b6b98"
+                            id: "s1.g1.firstname"
                         },
                         {
                             label: "Last Name",
                             type: "text",
-                            id: "6eff3638-80a7-4427-b07b-4c1be1c6b186"
+                            id: "s1.g1.lastname"
                         }
                     ]
                 },
                 {
                     label: "Email",
                     type: "email",
-                    id: "7f885969-f8ba-40b9-bf5d-0d57bc9c6a8d"
+                    id: "s1.email"
                 },
                 {
                     label: "Phone",
                     type: "text",
-                    id: "f61233e8-565e-43d0-9c14-7d7f220c6020"
+                    id: "s1.phone"
                 }
             ]
         },
         {
             type: "section",
             label: "Page 2",
-            id: "3a30803f-135f-442c-ab6e-d44d7d7a5164",
+            id: "s2",
             fields: [
                 {
-                    label: "Radio Buttons",
+                    label: "Radio Buttons 1",
                     type: "pick1",
-                    id: "bd90f44a-d479-49ae-ad66-c2c475dca66b",
-                    hasConditionalFields: true,
+                    id: "s2.radios1",
                     optionsDetail: {
-                        optionsAt: "/options/bd90f44a-d479-49ae-ad66-c2c475dca66b",
+                        optionsAt: "/options/s2.radios1",
                         options: [
                             { label: "Option 1", value: "one" },
                             { label: "Option 2", value: "two" }
@@ -80,30 +111,21 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
                 {
                     label: "Conditional Field",
                     type: "text",
-                    id: "b490f44a-d479-49ae-ad66-c2c475daa66b",
-                    // conditional: {
-                    //     value: "two",
-                    //     fieldId:
-                    //         "3a30803f-135f-442c-ab6e-d44d7d7a5164_bd90f44a-d479-49ae-ad66-c2c475dca66b"
-                    // }
+                    id: "s2.condtext",
                 }
             ]
         },
         {
             type: "section",
             label: "Page 3a",
-            id: "cd392929-c62e-4cdb-b4dd-914035c1cc8d",
-            // conditional: {
-            //     value: "one",
-            //     fieldId: "3a30803f-135f-442c-ab6e-d44d7d7a5164_bd90f44a-d479-49ae-ad66-c2c475dca66b"
-            // },
+            id: "s3",
             fields: [
                 {
                     label: "More radio buttons",
                     type: "pick1",
-                    id: "a15bef56-ab67-4b98-a781-4441cc3bba56",
+                    id: "s3.moreradio",
                     optionsDetail: {
-                        optionsAt: "/options/a15bef56-ab67-4b98-a781-4441cc3bba56",
+                        optionsAt: "/options/s3.moreradio",
                         options: [
                             { label: "Option 1", value: "one" },
                             { label: "Option 2", value: "two" }
@@ -115,19 +137,14 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         {
             type: "section",
             label: "Page 3b",
-            id: "1dd4ec7c-fb53-47f4-af1b-1ab8f805b888",
-            // conditional: {
-            //     value: "two",
-            //     fieldId:
-            //         "3a30803f-135f-442c-ab6e-d44d7d7a5164_bd90f44a-d479-49ae-ad66-c2c475dca66b"
-            // },
+            id: "s4",
             fields: [
                 {
                     label: "Something to toggle",
                     type: "pick1",
-                    id: "3ca9237d-e225-4950-a298-f81ce996cb85",
+                    id: "s4.toggle",
                     optionsDetail: {
-                        optionsAt: "/options/3ca9237d-e225-4950-a298-f81ce996cb85",
+                        optionsAt: "/options/s4.toggle",
                         options: [
                             { label: "Option 1", value: "one" },
                             { label: "Option 2", value: "two" }
@@ -137,44 +154,195 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
                 {
                     type: "field_group",
                     label: "Name",
-                    id: "b8406cb5-ff0d-4a83-a8f8-99740b6d91f7",
+                    id: "s4.g1",
                     fields: [
                         {
                             label: "First Name",
                             type: "text",
-                            id: "c6e065e1-dbcb-44ea-831f-ac3af889e964"
+                            id: "s4.g1.fname"
                         },
                         {
                             label: "Last Name",
                             type: "text",
-                            id: "e279ba9c-3c9b-4df8-b267-d14b3c2adcdd"
+                            id: "s4.g1.lname"
                         }
                     ]
                 },
                 {
                     label: "Email",
                     type: "email",
-                    id: "a95208a0-7673-48a8-b704-2fb408fa6eec"
+                    id: "s4.email"
                 },
                 {
                     label: "Phone",
                     type: "text",
-                    id: "8dde5083-0619-42d6-8fc7-0563c35d03ad"
+                    id: "s4.phone"
                 }
             ]
         },
         {
             type: "section",
             label: "Page 4",
-            id: "0c946643-5a83-4545-baea-065b27b51e8a",
+            id: "s5",
             fields: [
                 {
                     label: "Final Comment",
                     type: "text",
-                    id: "f61231e8-565e-43d0-9c14-7d7f220c6020"
+                    id: "s5.final"
                 }
             ]
         }
     ];
-    return fields;
+    const flatFieldList = flatten(fields);
+    console.log("passed-in or default", flatFieldList);
+
+    const addField = (parentField: IField | null, newSubField: IField): IField | null => {
+        if (!parentField) return null; // parent field was conditional, and removed.
+        if (!parentField.fields) parentField.fields = [];
+        const conditionalOn = conditionals.find(f => f.dependentId === newSubField.id);
+        if (conditionalOn) {
+            console.log(newSubField.id, 'is conditional on the value of', conditionalOn.independentId);
+            const independentFieldCurrentValue = flatFieldList.find(f => f.id === conditionalOn.independentId)?.value;
+            if (independentFieldCurrentValue != conditionalOn.valueOfIndependent)
+                return null;
+        }
+        parentField.fields.push(newSubField);
+        newSubField.value = flatFieldList.find(f => f.id === newSubField.id)?.value;
+        newSubField.hasConditionalFields = !!conditionals.find(f => newSubField.id === f.independentId);
+        if (newSubField.hasConditionalFields) console.log(newSubField.id, 'has conditional fields');
+        return newSubField;
+    }
+
+    const root: IField = { id: 'ROOT', type: 'text', label: '', fields: [] } as IField;
+
+    const s1 = addField(root, {
+        type: "section",
+        label: "Page 1",
+        id: "s1",
+    });
+    const s1g1 = addField(s1, {
+        type: "field_group",
+        label: "Name",
+        id: "s1.g1"
+    });
+    addField(s1g1, {
+        label: "First Name",
+        type: "text",
+        id: "s1.g1.firstname"
+    });
+    addField(s1g1, {
+        label: "Last Name",
+        type: "text",
+        id: "s1.g1.lastname"
+    });
+    addField(s1, {
+        label: "Email",
+        type: "email",
+        id: "s1.email"
+    });
+    addField(s1, {
+        label: "Phone",
+        type: "text",
+        id: "s1.phone"
+    });
+
+    const s2 = addField(root, {
+        type: "section",
+        label: "Page 2",
+        id: "s2",
+    });
+    const s2radios1 = addField(s2, {
+        label: "Radio Buttons 1",
+        type: "pick1",
+        id: "s2.radios1",
+        hasConditionalFields: true,
+        optionsDetail: {
+            optionsAt: "/options/s2.radios1",
+            options: [
+                { label: "Option 1", value: "one" },
+                { label: "Option 2", value: "two" }
+            ]
+        }
+    });
+    addField(s2, {
+        label: "Conditional Field",
+        type: "text",
+        id: "s2.condtext",
+    });
+
+    const s3 = addField(root, {
+        type: "section",
+        label: "Page 3a",
+        id: "s3",
+    });
+    addField(s3, {
+        label: "More radio buttons",
+        type: "pick1",
+        id: "s3.moreradio",
+        optionsDetail: {
+            optionsAt: "/options/s3.moreradio",
+            options: [
+                { label: "Option 1", value: "one" },
+                { label: "Option 2", value: "two" }
+            ]
+        }
+    });
+
+    const s4 = addField(root, {
+        type: "section",
+        label: "Page 3b",
+        id: "s4",
+    });
+    addField(s4, {
+        label: "Something to toggle",
+        type: "pick1",
+        id: "s4.toggle",
+        optionsDetail: {
+            optionsAt: "/options/s4.toggle",
+            options: [
+                { label: "Option 1", value: "one" },
+                { label: "Option 2", value: "two" }
+            ]
+        }
+    });
+    let s4g1 = addField(s4, {
+        type: "field_group",
+        label: "Name",
+        id: "s4.g1",
+    });
+    addField(s4g1, {
+        label: "First Name",
+        type: "text",
+        id: "s4.g1.fname"
+    });
+    addField(s4g1, {
+        label: "Last Name",
+        type: "text",
+        id: "s4.g1.lname"
+    });
+    addField(s4, {
+        label: "Email",
+        type: "email",
+        id: "s4.email"
+    });
+    addField(s4, {
+        label: "Phone",
+        type: "text",
+        id: "s4.phone"
+    });
+
+    const s5 = addField(root, {
+        type: "section",
+        label: "Page 4",
+        id: "s5",
+    });
+    addField(s5, {
+        label: "Final Comment",
+        type: "text",
+        id: "s5.final"
+    });
+
+    console.log("server returns", root.fields);
+    return root.fields!;
 }
+

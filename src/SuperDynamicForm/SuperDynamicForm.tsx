@@ -1,9 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import type { IField } from "./ISuperDynamicForm";
-import { DynFieldGroup } from "./DynFieldGroup";
-import { DynInputField } from "./DynInputField";
-import { DynRadios } from "./DynRadios";
+import { DynFieldGroup, DynInputField, DynRadios } from "./SuperDynamicFields";
 import { getDynamicForm, getOptions, pseudoSubmit, submitDynamicForm } from "../backend/api";
 import { useAsync } from "../util/useAsync";
 import { Loading } from "../util/Loading";
