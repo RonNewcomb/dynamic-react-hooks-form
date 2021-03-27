@@ -21,15 +21,14 @@ export interface IUtilityBelt {
 
 export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
   const [fields, isLoading, fieldGetError] = useAsync<IField[], typeof getDynamicForm>(getDynamicForm, query, endpoint);
-  const [rerender, setRerender] = useState(1);
-  const [overlayOn, setOverlayOn] = useState(false);
+  const [overlay, setOverlay] = useState(0);
   const [current, setCurrent] = useState(fields || []);
   const [serverError, setServerError] = useState(fieldGetError);
 
   if (isLoading) return <Loading />;
   if (fieldGetError) return <>{fieldGetError.message}</>;
   if (!fields || !fields.length) return <>The form has no fields in it.</>;
-  if (!current || !current.length) setCurrent(fields); // initialization after getDynamicForm return
+  if (!current || !current.length) setCurrent(fields); // initialization after useAsync(getDynamicForm) returns
 
   const utilityBelt: IUtilityBelt = {
     forceRender: () => void 0, // setRerender(rerender + 1),
@@ -38,37 +37,37 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
       if (field.value == newValue) return;
       field.value = newValue;
       if (!field.hasConditionalFields) return;
-      setOverlayOn(true);
+      setOverlay(overlay + 1);
       return pseudoSubmit(current)
         .then(setCurrent)
         .catch(setServerError)
-        .finally(() => setOverlayOn(false));
+        .finally(() => setOverlay(overlay - 1));
     },
 
     getOptionsAt: async (field: IField): Promise<IOption[]> => {
       if (!field.optionsDetail || !field.optionsDetail.optionsAt) return []; // can't get them; bad server data
       if (field.optionsDetail.options && field.optionsDetail.options.length > 0) return field.optionsDetail.options; // already got them
-      setOverlayOn(true);
+      setOverlay(overlay + 1);
       //console.log("fetching optionsAt", field.optionsDetail.optionsAt);
       return getOptions(field.optionsDetail.optionsAt)
         .catch(setServerError)
         .then(opts => (field.optionsDetail!.options = opts || []))
-        .finally(() => setOverlayOn(false));
+        .finally(() => setOverlay(overlay - 1));
     },
   }; // end utilityBelt
 
   const submitting = async (ev: React.FormEvent<HTMLFormElement>) => {
     ev.preventDefault();
-    setOverlayOn(true);
+    setOverlay(overlay + 1);
     return submitDynamicForm(current)
       .then(_ => (onDone ? onDone(current) : setServerError({ message: "Success!" } as Error)))
       .catch(setServerError)
-      .finally(() => setOverlayOn(false));
+      .finally(() => setOverlay(overlay - 1));
   };
 
   return (
-    <Overlay if={overlayOn}>
-      <form onSubmit={submitting} style={{ maxWidth: 400 }}>
+    <Overlay if={overlay !== 0}>
+      <form onSubmit={submitting} style={{ maxWidth: 400, margin: "auto" }}>
         {renderFields(current, utilityBelt)}
         <hr />
         {serverError && <div>{serverError.message}</div>}

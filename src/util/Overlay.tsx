@@ -3,17 +3,19 @@ const overlay: React.CSSProperties = {
   backgroundColor: "gray",
   opacity: 0.5,
   cursor: "none",
-  width: 400, // whatever
-};
-
-const off: React.CSSProperties = {
-  opacity: 1,
-  cursor: "initial",
-  marginTop: "2em", // whatever
+  left: 0,
+  right: 0,
+  top: 0,
+  bottom: 0,
 };
 
 interface IProps extends React.PropsWithChildren<any> {
   if: boolean;
 }
 
-export const Overlay = (props: IProps) => <div style={props.if ? overlay : off}>{props.children}</div>;
+export const Overlay = (props: IProps) => (
+  <div style={{ position: "relative" }}>
+    {props.children}
+    {props.if && <div style={overlay}></div>}
+  </div>
+);
