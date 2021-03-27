@@ -7,7 +7,7 @@ export const mockSubmit = (form: IField[]): ISubmitDynamicForm => {
 }
 
 export const mockOptionsFromServer = (optionsAtUrl: string): IOption[] => {
-    //console.log("mockOptionsFromServer url", optionsAtUrl);
+    //console.log("SERVER: mockOptionsFromServer url", optionsAtUrl);
     switch (optionsAtUrl) {
         case "/options/s2.radios1":
             return [
@@ -109,10 +109,6 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
                     id: "s2.radios1",
                     optionsDetail: {
                         optionsAt: "/options/s2.radios1",
-                        // options: [
-                        //     { label: "Option 1", value: "one" },
-                        //     { label: "Option 2", value: "two" }
-                        // ]
                     }
                 },
                 {
@@ -133,10 +129,6 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
                     id: "s3.moreradio",
                     optionsDetail: {
                         optionsAt: "/options/s3.moreradio",
-                        // options: [
-                        //     { label: "Option 1", value: "one" },
-                        //     { label: "Option 2", value: "two" }
-                        // ]
                     }
                 }
             ]
@@ -152,10 +144,6 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
                     id: "s4.toggle",
                     optionsDetail: {
                         optionsAt: "/options/s4.toggle",
-                        // options: [
-                        //     { label: "Option 1", value: "one" },
-                        //     { label: "Option 2", value: "two" }
-                        // ]
                     }
                 },
                 {
@@ -201,14 +189,14 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         }
     ];
     const flatFieldList = flatten(fields);
-    console.log("passed-in or default", flatFieldList);
+    if (formAsIs) console.log("SERVER: received", flatFieldList);
 
     const addField = (parentField: IField | null, newSubField: IField): IField | null => {
         if (!parentField) return null; // parent field was conditional, and removed.
         if (!parentField.fields) parentField.fields = [];
         const conditionalOn = conditionals.find(f => f.dependentId === newSubField.id);
         if (conditionalOn) {
-            console.log(newSubField.id, 'is conditional on the value of', conditionalOn.independentId);
+            //console.log("SERVER:", newSubField.id, 'is conditional on the value of', conditionalOn.independentId);
             const independentFieldCurrentValue = flatFieldList.find(f => f.id === conditionalOn.independentId)?.value;
             if (independentFieldCurrentValue != conditionalOn.valueOfIndependent)
                 return null;
@@ -217,7 +205,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         newSubField.value = flatFieldList.find(f => f.id === newSubField.id)?.value;
         if (conditionals.find(f => newSubField.id === f.independentId))
             newSubField.hasConditionalFields = true;
-        if (newSubField.hasConditionalFields) console.log(newSubField.id, 'has conditional fields');
+        //if (newSubField.hasConditionalFields) console.log("SERVER:", newSubField.id, 'has conditional fields');
         return newSubField;
     }
 
@@ -338,7 +326,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         id: "s5.final"
     });
 
-    console.log("server returns", root.fields);
+    console.log("SERVER: returns", root.fields);
     return root.fields!;
 }
 

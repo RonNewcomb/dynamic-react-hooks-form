@@ -35,14 +35,14 @@ interface IDynInputFieldProps extends IProps {
 }
 
 export const DynFieldGroup = ({ field, fns }: IProps) => (
-  <fieldset key={field.id}>
+  <fieldset>
     <h3>{field.label}</h3>
     {renderFields(field.fields || [], fns)}
   </fieldset>
 );
 
 export const DynInputField = ({ field, fns, type }: IDynInputFieldProps) => (
-  <div key={field.id}>
+  <div>
     <label htmlFor={field.id}>{field.label}</label>
     <input type={type || "text"} id={field.id} name={field.id} value={field.value} onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)} />
   </div>
@@ -51,7 +51,7 @@ export const DynInputField = ({ field, fns, type }: IDynInputFieldProps) => (
 export const DynRadioset = ({ field, fns }: IProps) => {
   const [options, isLoading, error] = useAsync<IOption[], typeof fns.getOptionsAt>(fns.getOptionsAt, field);
   return (
-    <>
+    <div>
       <h3>{field.label}</h3>
       {field.optionsDetail &&
         (options || []).map(option => (
@@ -69,6 +69,6 @@ export const DynRadioset = ({ field, fns }: IProps) => {
           </label>
         ))}
       {error && <div>{error.message}</div>}
-    </>
+    </div>
   );
 };
