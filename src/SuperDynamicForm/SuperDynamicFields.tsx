@@ -1,4 +1,7 @@
-import type { IField } from "./ISuperDynamicForm";
+import * as React from "react";
+import { Overlay } from "../util/Overlay";
+import { useAsync } from "../util/useAsync";
+import type { IField, IOption } from "./ISuperDynamicForm";
 import { IUtilityBelt, renderSubfields } from "./SuperDynamicForm";
 
 interface IProps {
@@ -24,22 +27,27 @@ export const DynInputField = ({ field, type, fns }: IDynInputFieldProps) => (
   </div>
 );
 
-export const DynRadios = ({ field, fns }: IProps) => (
-  <div>
-    <h3>{field.label}</h3>
-    {field.optionsDetail &&
-      (field.optionsDetail.options || []).map(option => (
-        <label htmlFor={field.id + option.value} key={option.value}>
-          <input
-            type="radio"
-            id={field.id + option.value}
-            name={field.id}
-            value={option.value}
-            checked={field.value === option.value}
-            onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)}
-          />
-          {option.label}
-        </label>
-      ))}
-  </div>
-);
+export const DynRadios = ({ field, fns }: IProps) => {
+  const [options, isLoading, error] = useAsync<IOption[], typeof fns.getOptionsAt>(fns.getOptionsAt, field);
+  return (
+    <>
+      <h3>{field.label}</h3>
+      {field.optionsDetail &&
+        (options || []).map(option => (
+          <label htmlFor={field.id + option.value} key={option.value}>
+            <input
+              type="radio"
+              id={field.id + option.value}
+              name={field.id}
+              disabled={isLoading}
+              value={option.value}
+              checked={field.value === option.value}
+              onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)}
+            />
+            {option.label}
+          </label>
+        ))}
+      {error && <div>{error.message}</div>}
+    </>
+  );
+};

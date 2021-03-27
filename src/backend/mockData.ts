@@ -1,6 +1,13 @@
-import { IOption, IField } from "../SuperDynamicForm/ISuperDynamicForm";
+import type { IOption, IField } from "../SuperDynamicForm/ISuperDynamicForm";
+import type { ISubmitDynamicForm } from "./api";
 
-export const mockOptionsFromServer = (optionsAtUrl: string) => {
+export const mockSubmit = (form: IField[]): ISubmitDynamicForm => {
+    if (Math.random() < 0.1) return { errors: ["Validation error 1", "Validation error 2"] };
+    return { success: true }
+}
+
+export const mockOptionsFromServer = (optionsAtUrl: string): IOption[] => {
+    //console.log("mockOptionsFromServer url", optionsAtUrl);
     switch (optionsAtUrl) {
         case "/options/s2.radios1":
             return [
@@ -102,10 +109,10 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
                     id: "s2.radios1",
                     optionsDetail: {
                         optionsAt: "/options/s2.radios1",
-                        options: [
-                            { label: "Option 1", value: "one" },
-                            { label: "Option 2", value: "two" }
-                        ]
+                        // options: [
+                        //     { label: "Option 1", value: "one" },
+                        //     { label: "Option 2", value: "two" }
+                        // ]
                     }
                 },
                 {
@@ -126,10 +133,10 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
                     id: "s3.moreradio",
                     optionsDetail: {
                         optionsAt: "/options/s3.moreradio",
-                        options: [
-                            { label: "Option 1", value: "one" },
-                            { label: "Option 2", value: "two" }
-                        ]
+                        // options: [
+                        //     { label: "Option 1", value: "one" },
+                        //     { label: "Option 2", value: "two" }
+                        // ]
                     }
                 }
             ]
@@ -145,10 +152,10 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
                     id: "s4.toggle",
                     optionsDetail: {
                         optionsAt: "/options/s4.toggle",
-                        options: [
-                            { label: "Option 1", value: "one" },
-                            { label: "Option 2", value: "two" }
-                        ]
+                        // options: [
+                        //     { label: "Option 1", value: "one" },
+                        //     { label: "Option 2", value: "two" }
+                        // ]
                     }
                 },
                 {
@@ -208,7 +215,8 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         }
         parentField.fields.push(newSubField);
         newSubField.value = flatFieldList.find(f => f.id === newSubField.id)?.value;
-        newSubField.hasConditionalFields = !!conditionals.find(f => newSubField.id === f.independentId);
+        if (conditionals.find(f => newSubField.id === f.independentId))
+            newSubField.hasConditionalFields = true;
         if (newSubField.hasConditionalFields) console.log(newSubField.id, 'has conditional fields');
         return newSubField;
     }
@@ -258,10 +266,6 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         hasConditionalFields: true,
         optionsDetail: {
             optionsAt: "/options/s2.radios1",
-            options: [
-                { label: "Option 1", value: "one" },
-                { label: "Option 2", value: "two" }
-            ]
         }
     });
     addField(s2, {
@@ -281,10 +285,6 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         id: "s3.moreradio",
         optionsDetail: {
             optionsAt: "/options/s3.moreradio",
-            options: [
-                { label: "Option 1", value: "one" },
-                { label: "Option 2", value: "two" }
-            ]
         }
     });
 
@@ -299,10 +299,6 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         id: "s4.toggle",
         optionsDetail: {
             optionsAt: "/options/s4.toggle",
-            options: [
-                { label: "Option 1", value: "one" },
-                { label: "Option 2", value: "two" }
-            ]
         }
     });
     let s4g1 = addField(s4, {

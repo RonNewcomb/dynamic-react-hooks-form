@@ -13,6 +13,12 @@ This is what we're going to do.
 
 ### `npm run start`
 
-Runs the app in the development mode on [http://localhost:3000](http://localhost:3000)
+React Hooks leans hard into Functional Programming, particularly its preference for immutable data. This makes our job harder since this form is all about input from users and servers at any time, and outputting state to servers and the rest of the app.
 
-Was formerly a create-react-app app, but react-scripts breaks the Typescript on useAsync's tuple.
+We use a fairly standard `useAsync` hook for the initial fetch of the fields that should appear. We assume a recursive structure of fields which can contain other fields. (The server may have notions of pages, sections, fieldsets, or just plain ol' groups.) The data from useAsync is supposed to be immutable, and when we try to do a pseudo-submit, find we cannot change it. So we declare a `current` useState which will point to the form from useAsync or pseudo-submit as appropriate.
+
+We _will_ mutate-in-place `current`. After all, we're accepting user input without monads so what's one more FP paradigm-break? Also, re-render hacks ahoy.
+
+Since we're doing several async calls to getOption and pseudoSubmit during the form's lifetime, we really need to prevent users modifying the form during calls. So we use an Overlay that prevents touching everything in the form while a call is in flight.
+
+We also need to handle server errors well since there's potential for so many of them. Such forms have a lot of user input and we don't wish to lose any of their work because the backend timed out once.
