@@ -4,6 +4,7 @@ import type { IOption, IField } from "../SuperDynamicForm/ISuperDynamicForm";
 export const milliseconds = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 export async function getDynamicForm(query: string, endpoint: string): Promise<IField[]> {
+    console.log("SERVER: getDynamicForm");
     await milliseconds(Math.random() * 2000 + 1000);
     //if (Math.random() < 0.1) throw Error("HTTP 500: GET ${endpoint}/getDynamicForm/${query} timed out");
     return mockDataFromServer();

@@ -21,12 +21,13 @@ export interface IUtilityBelt {
 
 export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
   console.log("RENDER SuperDynamicForm");
-  const [fields, isLoading, fieldGetError] = useAsync<IField[], typeof getDynamicForm>(getDynamicForm, query, endpoint);
+  const [fields, response] = useAsync<IField[], typeof getDynamicForm>(getDynamicForm, query, endpoint);
   const [numPendingPromises, setNumPendingPromises] = useState(0); // excludes the useAsync promise
+  //response.promise.then(_ => console.log(numPendingPromises, "promises"));
   const [current, setCurrent] = useState(fields || []);
-  const [serverError, setServerError] = useState(fieldGetError);
-  const [render, setRender] = useState(0);
+  const [serverError, setServerError] = useState(response.error);
 
+  const [render, setRender] = useState(0);
   const forceRender = useCallback(() => setRender(x => x + 1), []);
 
   const optionsCache = useMemo<Record<string, Promise<IOption[]>>>(() => ({}), []);
@@ -84,8 +85,8 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
     forceRender,
   ]);
 
-  if (isLoading) return <Loading />;
-  if (fieldGetError) return <>{fieldGetError.message}</>;
+  if (response.isLoading) return <Loading />;
+  if (response.error) return <>{response.error.message}</>;
   if (!fields || !fields.length) return <>The form has no fields in it.</>;
   if (!current || !current.length) setCurrent(fields); // initialization after useAsync(getDynamicForm) returns
 

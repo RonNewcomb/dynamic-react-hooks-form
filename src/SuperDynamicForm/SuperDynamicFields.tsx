@@ -49,7 +49,7 @@ export const DynInputField = ({ field, fns, type }: IDynInputFieldProps) => (
 );
 
 export const DynRadioset = ({ field, fns }: IProps) => {
-  const [options, isLoading, error] = useAsync<IOption[], typeof fns.getOptionsAt>(fns.getOptionsAt, field);
+  const [options, response] = useAsync<IOption[], typeof fns.getOptionsAt>(fns.getOptionsAt, field);
   return (
     <div>
       <h3>{field.label}</h3>
@@ -60,7 +60,7 @@ export const DynRadioset = ({ field, fns }: IProps) => {
               type="radio"
               id={field.id + option.value}
               name={field.id}
-              disabled={isLoading}
+              disabled={response.isLoading}
               value={option.value}
               checked={field.value === option.value}
               onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)}
@@ -68,7 +68,7 @@ export const DynRadioset = ({ field, fns }: IProps) => {
             {option.label}
           </label>
         ))}
-      {error && <div>{error.message}</div>}
+      {response.error && <div>{response.error.message}</div>}
     </div>
   );
 };
