@@ -3,22 +3,8 @@ import { useAsync } from "../util/useAsync";
 import type { IField, IOption } from "./ISuperDynamicForm";
 import type { IUtilityBelt } from "./SuperDynamicForm";
 
-interface IProps {
-  field: IField;
-  fns: IUtilityBelt;
-}
-
-interface IDynInputFieldProps extends IProps {
-  type: "text" | "email" | "tel" | "url" | "number" | "password";
-}
-
-export const renderFields = (fields: IField[], fns: IUtilityBelt) => (
-  <>
-    {fields.map(f => (
-      <React.Fragment key={f.id}>{renderField(f, fns)}</React.Fragment>
-    ))}
-  </>
-);
+export const renderFields = (fields: IField[], fns: IUtilityBelt) =>
+  fields.map(field => <React.Fragment key={field.id}>{renderField(field, fns)}</React.Fragment>);
 
 export const renderField = (field: IField, utilityBelt: IUtilityBelt) => {
   switch (field.type) {
@@ -39,6 +25,15 @@ export const renderField = (field: IField, utilityBelt: IUtilityBelt) => {
   }
 };
 
+interface IProps {
+  field: IField;
+  fns: IUtilityBelt;
+}
+
+interface IDynInputFieldProps extends IProps {
+  type: "text" | "email" | "tel" | "url" | "number" | "password";
+}
+
 export const DynFieldGroup = ({ field, fns }: IProps) => (
   <fieldset key={field.id}>
     <h3>{field.label}</h3>
@@ -46,7 +41,7 @@ export const DynFieldGroup = ({ field, fns }: IProps) => (
   </fieldset>
 );
 
-export const DynInputField = ({ field, type, fns }: IDynInputFieldProps) => (
+export const DynInputField = ({ field, fns, type }: IDynInputFieldProps) => (
   <div key={field.id}>
     <label htmlFor={field.id}>{field.label}</label>
     <input type={type || "text"} id={field.id} name={field.id} value={field.value} onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)} />
