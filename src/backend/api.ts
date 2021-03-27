@@ -11,13 +11,13 @@ export async function getDynamicForm(query: string, endpoint: string): Promise<I
 
 export async function getOptions(optionsAt: string): Promise<IOption[]> {
     await milliseconds(Math.random() * 2000 + 1000);
-    if (Math.random() < 0.1) throw Error(`HTTP 500: GET /getOptions/${optionsAt} timed out`);
+    if (Math.random() < 0.01) throw Error(`HTTP 500: GET /getOptions/${optionsAt} timed out`);
     return mockOptionsFromServer(optionsAt);
 }
 
 export async function pseudoSubmit(formAsIs: IField[]): Promise<IField[]> {
     await milliseconds(Math.random() * 2000 + 1000);
-    if (Math.random() < 0.1) throw Error(`HTTP 500: POST /pseudoSubmit`);
+    if (Math.random() < 0.01) throw Error(`HTTP 500: POST /pseudoSubmit`);
     return mockDataFromServer(formAsIs);
 }
 

@@ -1,8 +1,7 @@
 import * as React from "react";
-import { Overlay } from "../util/Overlay";
 import { useAsync } from "../util/useAsync";
 import type { IField, IOption } from "./ISuperDynamicForm";
-import { IUtilityBelt, renderSubfields } from "./SuperDynamicForm";
+import type { IUtilityBelt } from "./SuperDynamicForm";
 
 interface IProps {
   field: IField;
@@ -13,10 +12,37 @@ interface IDynInputFieldProps extends IProps {
   type: "text" | "email" | "tel" | "url" | "number" | "password";
 }
 
+export const renderFields = (fields: IField[], fns: IUtilityBelt) => (
+  <>
+    {fields.map(f => (
+      <React.Fragment key={f.id}>{renderField(f, fns)}</React.Fragment>
+    ))}
+  </>
+);
+
+export const renderField = (field: IField, utilityBelt: IUtilityBelt) => {
+  switch (field.type) {
+    case "section":
+      return <DynFieldGroup field={field} fns={utilityBelt} />;
+    case "field_group":
+      return <DynFieldGroup field={field} fns={utilityBelt} />;
+    case "pick1":
+      return <DynRadioset field={field} fns={utilityBelt} />;
+    case "text":
+      return <DynInputField field={field} fns={utilityBelt} type="text" />;
+    case "email":
+      return <DynInputField field={field} fns={utilityBelt} type="email" />;
+    case "number":
+      return <DynInputField field={field} fns={utilityBelt} type="number" />;
+    default:
+      return <div>Unknown field type '${field.type}'</div>;
+  }
+};
+
 export const DynFieldGroup = ({ field, fns }: IProps) => (
   <fieldset key={field.id}>
     <h3>{field.label}</h3>
-    {renderSubfields(field, fns)}
+    {renderFields(field.fields || [], fns)}
   </fieldset>
 );
 
@@ -27,7 +53,7 @@ export const DynInputField = ({ field, type, fns }: IDynInputFieldProps) => (
   </div>
 );
 
-export const DynRadios = ({ field, fns }: IProps) => {
+export const DynRadioset = ({ field, fns }: IProps) => {
   const [options, isLoading, error] = useAsync<IOption[], typeof fns.getOptionsAt>(fns.getOptionsAt, field);
   return (
     <>

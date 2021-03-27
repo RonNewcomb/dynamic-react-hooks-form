@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import type { IField, IOption } from "./ISuperDynamicForm";
-import { DynFieldGroup, DynInputField, DynRadios } from "./SuperDynamicFields";
+import { renderFields } from "./SuperDynamicFields";
 import { getDynamicForm, getOptions, pseudoSubmit, submitDynamicForm } from "../backend/api";
 import { useAsync } from "../util/useAsync";
 import { Loading } from "../util/Loading";
@@ -69,7 +69,7 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
   return (
     <Overlay if={overlayOn}>
       <form onSubmit={submitting} style={{ maxWidth: 400 }}>
-        {current.map(f => renderSubfields(f, utilityBelt))}
+        {renderFields(current, utilityBelt)}
         <hr />
         {serverError && <div>{serverError.message}</div>}
         <div>
@@ -78,32 +78,4 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
       </form>
     </Overlay>
   );
-};
-
-export const renderSubfields = (field: IField, utilityBelt: IUtilityBelt) => (
-  <React.Fragment key={field.id}>
-    <h2>{field.label}</h2>
-    {(field.fields || []).map(f => (
-      <React.Fragment key={f.id}>{renderLeafField(f, utilityBelt)}</React.Fragment>
-    ))}
-  </React.Fragment>
-);
-
-const renderLeafField = (field: IField, utilityBelt: IUtilityBelt) => {
-  switch (field.type) {
-    case "section":
-      return <DynFieldGroup field={field} fns={utilityBelt} />;
-    case "field_group":
-      return <DynFieldGroup field={field} fns={utilityBelt} />;
-    case "pick1":
-      return <DynRadios field={field} fns={utilityBelt} />;
-    case "text":
-      return <DynInputField field={field} type="text" fns={utilityBelt} />;
-    case "email":
-      return <DynInputField field={field} type="email" fns={utilityBelt} />;
-    case "number":
-      return <DynInputField field={field} type="number" fns={utilityBelt} />;
-    default:
-      return <div>Unknown field type '${field.type}'</div>;
-  }
 };
