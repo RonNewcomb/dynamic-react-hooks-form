@@ -13,7 +13,7 @@ interface IProps {
 }
 
 export interface IUtilityBelt {
-  forceRender?: () => void;
+  forceRender: () => void;
   captureValueAndCheckConditions: (field: IField, newValue: string) => Promise<void>;
   getOptionsAt: (field: IField) => Promise<IOption[]>;
   onSubmit: (ev: React.FormEvent<HTMLFormElement>) => Promise<any>;
@@ -25,6 +25,9 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
   const [numPendingPromises, setNumPendingPromises] = useState(0); // excludes the useAsync promise
   const [current, setCurrent] = useState(fields || []);
   const [serverError, setServerError] = useState(fieldGetError);
+  const [render, setRender] = useState(0);
+
+  const forceRender = useCallback(() => setRender(x => x + 1), []);
 
   const optionsCache = useMemo<Record<string, Promise<IOption[]>>>(() => ({}), []);
 
@@ -48,9 +51,10 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
 
   const captureValueAndCheckConditions = useCallback(
     async (field: IField, newValue: string) => {
+      console.log(field.id, "changing to", newValue);
       if (field.value == newValue) return;
       field.value = newValue;
-      if (!field.hasConditionalFields) return;
+      if (!field.hasConditionalFields) return forceRender();
       console.log("FETCHing conditional fields");
       setNumPendingPromises(x => x + 1);
       return pseudoSubmit(current)
@@ -58,7 +62,7 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
         .catch(setServerError)
         .finally(() => setNumPendingPromises(x => x - 1));
     },
-    [current, setNumPendingPromises, setServerError, setCurrent, pseudoSubmit]
+    [current, setNumPendingPromises, setServerError, setCurrent, forceRender, pseudoSubmit]
   );
 
   const onSubmit = useCallback(
@@ -77,6 +81,7 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
     captureValueAndCheckConditions,
     getOptionsAt,
     onSubmit,
+    forceRender,
   ]);
 
   if (isLoading) return <Loading />;
