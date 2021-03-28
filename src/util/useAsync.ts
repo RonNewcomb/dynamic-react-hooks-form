@@ -24,9 +24,11 @@ const NoFunction = () => Promise.resolve(undefined as any);
  * 
  * Example:
  * 
- * const [sectionsData, response] = useAsync<ISection[], typeof getSectionData>(getSectionData, "query", "endpoint");
+ * const [data, response] = useAsync<ISection[], typeof getSectionData>(getSectionData, "query", "endpoint");
  * 
- * Value and Response.error will never both be defined at the same time.
+ * ...where   getSectionData(query: string, endpoint: string): Promise<ISection[]>
+ * 
+ * value and response.error will never both be defined at the same time.
  * Initialized to response.isLoading=true, value & response.error are undefined.
  * Calling response.refresh() will immediately set Value & response.error undefined.
  */

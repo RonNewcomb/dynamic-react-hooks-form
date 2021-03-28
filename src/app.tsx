@@ -19,7 +19,7 @@ export const App = () => {
         {result && <pre>{JSON.stringify(result, null, 2)}</pre>}
         {!result && <SuperDynamicForm query="?querystring=" endpoint="http://hostname.com" onDone={setResult} />}
       </main>
-      <footer>&copy; /\/\/\/\/\/\/\/\/</footer>
+      <footer>&copy; ~~~ ~~ ~~~~ ~~ </footer>
       <style>
         {`
           .superDynamicForm {

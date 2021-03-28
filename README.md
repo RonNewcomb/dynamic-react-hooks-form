@@ -19,6 +19,6 @@ We use a fairly standard `useAsync` hook for the initial fetch of the fields tha
 
 We _will_ mutate-in-place `current`. After all, we're accepting user input without monads so what's one more FP paradigm-break? Also, re-render hacks ahoy.
 
-Since we're doing several async calls to getOption and pseudoSubmit during the form's lifetime, we really need to prevent users modifying the form during calls. So we use an Overlay that prevents touching everything in the form while a call is in flight.
+Since we're doing several async calls to getOption and pseudoSubmit during the form's lifetime, we really need to prevent users modifying the form during calls. So we use an Overlay that prevents touching everything in the form while a call is in flight. This requires tracking how many unresolved promises we have. Although we could, we don't track the promise in useAsync this way. Before useAsync returns, there's just a blank screen. There's nothing to mask.
 
 We also need to handle server errors well since there's potential for so many of them. Such forms have a lot of user input and we don't wish to lose any of their work because the backend timed out once.
