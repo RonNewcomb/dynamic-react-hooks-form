@@ -9,9 +9,9 @@ export const renderFields = (fields: IField[], fns: IUtilityBelt) =>
 export const renderField = (field: IField, utilityBelt: IUtilityBelt) => {
   switch (field.type) {
     case "section":
-      return <DynFieldGroup field={field} fns={utilityBelt} />;
+      return <DynGroup field={field} fns={utilityBelt} />;
     case "field_group":
-      return <DynFieldGroup field={field} fns={utilityBelt} />;
+      return <DynFieldSet field={field} fns={utilityBelt} />;
     case "pick1":
       return <DynRadioset field={field} fns={utilityBelt} />;
     case "text":
@@ -34,15 +34,22 @@ interface IDynInputFieldProps extends IProps {
   type: "text" | "email" | "tel" | "url" | "number" | "password";
 }
 
-export const DynFieldGroup = ({ field, fns }: IProps) => (
-  <fieldset>
+export const DynGroup = ({ field, fns }: IProps) => (
+  <div className="dynGroup">
+    <h3>{field.label}</h3>
+    {renderFields(field.fields || [], fns)}
+  </div>
+);
+
+export const DynFieldSet = ({ field, fns }: IProps) => (
+  <fieldset className="dynFieldSet">
     <h3>{field.label}</h3>
     {renderFields(field.fields || [], fns)}
   </fieldset>
 );
 
 export const DynInputField = ({ field, fns, type }: IDynInputFieldProps) => (
-  <div>
+  <div className="DynInputField">
     <label htmlFor={field.id}>{field.label}</label>
     <input type={type || "text"} id={field.id} name={field.id} value={field.value} onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)} />
   </div>
@@ -51,7 +58,7 @@ export const DynInputField = ({ field, fns, type }: IDynInputFieldProps) => (
 export const DynRadioset = ({ field, fns }: IProps) => {
   const [options, response] = useAsync<IOption[], typeof fns.getOptionsAt>(fns.getOptionsAt, field);
   return (
-    <div>
+    <div className="DynRadioset">
       <h3>{field.label}</h3>
       {field.optionsDetail &&
         (options || []).map(option => (

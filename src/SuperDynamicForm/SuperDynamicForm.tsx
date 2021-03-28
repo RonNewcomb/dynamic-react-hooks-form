@@ -78,7 +78,7 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
     [current, setNumPendingPromises, setServerError, onDone, submitDynamicForm]
   );
 
-  const utilityBelt = useMemo(() => ({ captureValueAndCheckConditions, getOptionsAt, onSubmit } as IUtilityBelt), [
+  const utilityBelt = useMemo<IUtilityBelt>(() => ({ captureValueAndCheckConditions, getOptionsAt, onSubmit, forceRender }), [
     captureValueAndCheckConditions,
     getOptionsAt,
     onSubmit,
@@ -92,7 +92,7 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
 
   return (
     <Overlay if={numPendingPromises !== 0}>
-      <form onSubmit={onSubmit} style={{ maxWidth: 400, margin: "auto" }}>
+      <form onSubmit={onSubmit} className="superDynamicForm">
         {renderFields(current, utilityBelt)}
         <hr />
         {serverError && <div>{serverError.message}</div>}
