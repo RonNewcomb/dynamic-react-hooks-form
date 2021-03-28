@@ -107,9 +107,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
                     label: "Radio Buttons 1",
                     type: "pick1",
                     id: "s2.radios1",
-                    optionsDetail: {
-                        optionsAt: "/options/s2.radios1",
-                    }
+                    optionsUrl: "/options/s2.radios1",
                 },
                 {
                     label: "Conditional Field",
@@ -127,9 +125,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
                     label: "More radio buttons",
                     type: "pick1",
                     id: "s3.moreradio",
-                    optionsDetail: {
-                        optionsAt: "/options/s3.moreradio",
-                    }
+                    optionsUrl: "/options/s3.moreradio",
                 }
             ]
         },
@@ -142,9 +138,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
                     label: "Something to toggle",
                     type: "pick1",
                     id: "s4.toggle",
-                    optionsDetail: {
-                        optionsAt: "/options/s4.toggle",
-                    }
+                    optionsUrl: "/options/s4.toggle",
                 },
                 {
                     type: "field_group",
@@ -252,9 +246,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         type: "pick1",
         id: "s2.radios1",
         hasConditionalFields: true,
-        optionsDetail: {
-            optionsAt: "/options/s2.radios1",
-        }
+        optionsUrl: "/options/s2.radios1",
     });
     addField(s2, {
         label: "Conditional Field",
@@ -271,9 +263,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         label: "More radio buttons",
         type: "pick1",
         id: "s3.moreradio",
-        optionsDetail: {
-            optionsAt: "/options/s3.moreradio",
-        }
+        optionsUrl: "/options/s3.moreradio",
     });
 
     const s4 = addField(root, {
@@ -285,9 +275,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         label: "Something to toggle",
         type: "pick1",
         id: "s4.toggle",
-        optionsDetail: {
-            optionsAt: "/options/s4.toggle",
-        }
+        optionsUrl: "/options/s4.toggle",
     });
     let s4g1 = addField(s4, {
         type: "field_group",
@@ -324,6 +312,11 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         label: "Final Comment",
         type: "text",
         id: "s5.final"
+    });
+    addField(s5, {
+        label: " ",
+        type: "separator",
+        id: "s5.sep"
     });
 
     console.log("SERVER: returns", root.fields);

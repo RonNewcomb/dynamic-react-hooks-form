@@ -16,7 +16,8 @@ export const App = () => {
         <div>Item 2</div>
       </aside>
       <main>
-        {result ? <pre>{JSON.stringify(result, null, 2)}</pre> : <SuperDynamicForm query="?querystring=" endpoint="http://hostname.com" onDone={setResult} />}
+        {result && <pre>{JSON.stringify(result, null, 2)}</pre>}
+        {!result && <SuperDynamicForm query="?querystring=" endpoint="http://hostname.com" onDone={setResult} />}
       </main>
       <footer>&copy; /\/\/\/\/\/\/\/\/</footer>
       <style>
@@ -25,52 +26,39 @@ export const App = () => {
             max-width: 400;
             margin: auto;
           }
-          .superDynamicForm new {
-            max-width: 400;
-            margin: auto;
+          .superDynamicForm [newlyAdded] {
+          }
+          .superDynamicForm [removing] {
           }
 
           body {
-            margin: 0;
-            background-color: ${ambientColor};
-            color: ${textColor};
             font-family: Verdana, sans-serif;
             font: menu;
+            background-color: ${ambientColor};
+            color: ${textColor};
           }
           nav {
             display: flex;
-            padding: 0 10px;
+            ${panel};
             background-color: ${topbarColor};
             color: ${textColorInverse};
           }
           nav > * {
-            padding: 14px 16px;
-          }
-          nav > *:hover {
-            background-color: ${ambientColor};
+            padding: 0 16px;
           }
           aside {
             float: left;
-            width: calc(${leftSidebarWidth} - 50px);
-            background-color: ${panelColor};
-            font-weight: 600;
-            border: 2px solid ${textColorInverse};
-            border-left: 0;
-            border-radius: 0 10px 10px 0;
-            margin: 10 10 10 0;
-            padding: 14 14 14 0;
+            width: calc(${leftSidebarWidth}px - ${panelExterior}px);
+            font-weight: 800;
+            ${panel}
           }
           aside > * {
             padding: 10px;
           }
           main {
-            min-height: 80vh;
-            background-color: ${panelColor};
-            border-radius: 10px 0 0 10px;
-            border: 2px solid ${textColorInverse};
-            border-right: 0;
-            margin: 10 0 10 ${leftSidebarWidth};
-            padding: 14 0 14 14;
+            min-height: 70vh;
+            ${panel}
+            margin-left: calc(${leftSidebarWidth}px + ${panelExterior}px) !important;
           }
           footer {
             font-size: xx-small;
@@ -89,3 +77,14 @@ const topbarColor = "#333";
 const textColor = "black";
 const textColorInverse = "white";
 const panelColor = "hsl(39deg 77% 90%)"; // "light wheat"
+const panelPadding = 14;
+const panelBorder = 2;
+const panelMargin = 10;
+const panelExterior = panelPadding + panelBorder + panelMargin;
+const panel = `
+  background-color: ${panelColor};
+  margin: ${panelMargin}px;
+  border: ${panelBorder}px solid ${textColorInverse};
+  border-radius: 10px;
+  padding: ${panelPadding}px;
+`;

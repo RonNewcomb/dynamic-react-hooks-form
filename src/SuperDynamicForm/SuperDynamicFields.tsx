@@ -14,6 +14,8 @@ export const renderField = (field: IField, utilityBelt: IUtilityBelt) => {
       return <DynFieldSet field={field} fns={utilityBelt} />;
     case "pick1":
       return <DynRadioset field={field} fns={utilityBelt} />;
+    case "separator":
+      return <hr />;
     case "text":
       return <DynInputField field={field} fns={utilityBelt} type="text" />;
     case "email":
@@ -56,25 +58,24 @@ export const DynInputField = ({ field, fns, type }: IDynInputFieldProps) => (
 );
 
 export const DynRadioset = ({ field, fns }: IProps) => {
-  const [options, response] = useAsync<IOption[], typeof fns.getOptionsAt>(fns.getOptionsAt, field);
+  const [options, response] = useAsync<IOption[], typeof fns.fetchOptions>(fns.fetchOptions, field);
   return (
     <div className="DynRadioset">
       <h3>{field.label}</h3>
-      {field.optionsDetail &&
-        (options || []).map(option => (
-          <label htmlFor={field.id + option.value} key={option.value}>
-            <input
-              type="radio"
-              id={field.id + option.value}
-              name={field.id}
-              disabled={response.isLoading}
-              value={option.value}
-              checked={field.value === option.value}
-              onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)}
-            />
-            {option.label}
-          </label>
-        ))}
+      {(options || []).map(option => (
+        <label htmlFor={field.id + option.value} key={option.value}>
+          <input
+            type="radio"
+            id={field.id + option.value}
+            name={field.id}
+            disabled={response.isLoading}
+            value={option.value}
+            checked={field.value === option.value}
+            onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)}
+          />
+          {option.label}
+        </label>
+      ))}
       {response.error && <div>{response.error.message}</div>}
     </div>
   );

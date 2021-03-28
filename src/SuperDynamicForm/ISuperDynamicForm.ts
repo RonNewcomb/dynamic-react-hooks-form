@@ -1,10 +1,6 @@
 
-export type SuperDynamicFormFieldTypes = 'section' | 'field_group' | 'pick1' | 'text' | 'email' | 'number';
+export type SuperDynamicFormFieldTypes = 'section' | 'field_group' | 'pick1' | 'text' | 'email' | 'number' | 'separator';
 
-export interface ICondition {
-    value: string;
-    fieldId: string;
-}
 
 export interface IField {
     id: string;
@@ -15,7 +11,9 @@ export interface IField {
 
     fields?: IField[];      // if type == 'field_group' or 'section'
 
-    optionsDetail?: IOptionsDetail; // if type is 'pick1'
+    // if type is 'pick1'
+    options?: IOption[]; // if blank, .optionsUrl must have URL to get list
+    optionsUrl?: string;  // if blank, .options must have list
 
     hasConditionalFields?: boolean; // if true then requires pseudosubmit onChange
 }
@@ -23,11 +21,4 @@ export interface IField {
 export interface IOption {
     label: string;
     value: string;
-}
-
-export interface IOptionsDetail {
-    atLeast?: number; // default 1, please
-    atMost?: number; // default 1, please
-    options?: IOption[]; // if blank, .optionsAt must have URL to get list
-    optionsAt?: string;  // if blank, .options must have list
 }
