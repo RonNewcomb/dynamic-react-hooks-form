@@ -62,20 +62,24 @@ export const DynRadioset = ({ field, fns }: IProps) => {
   return (
     <div className="DynRadioset">
       <h3>{field.label}</h3>
-      {(options || []).map(option => (
-        <label htmlFor={field.id + option.value} key={option.value}>
-          <input
-            type="radio"
-            id={field.id + option.value}
-            name={field.id}
-            disabled={response.isLoading}
-            value={option.value}
-            checked={field.value === option.value}
-            onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)}
-          />
-          {option.label}
-        </label>
-      ))}
+      {(options || []).map(option => {
+        const optionValue = option.value ?? option.label; // so .value is optional
+        const uniqueId = field.id + optionValue; // because option.value might be something like "yes" which is used a dozen times on the same page
+        return (
+          <label htmlFor={uniqueId} key={optionValue}>
+            <input
+              type="radio"
+              id={uniqueId}
+              name={field.id}
+              disabled={response.isLoading}
+              value={optionValue}
+              checked={field.value === optionValue}
+              onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)}
+            />
+            {option.label}
+          </label>
+        );
+      })}
       {response.error && <div>{response.error.message}</div>}
     </div>
   );

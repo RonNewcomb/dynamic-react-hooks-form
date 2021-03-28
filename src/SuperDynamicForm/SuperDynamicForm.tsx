@@ -36,8 +36,8 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
       if (field.options && field.options.length) return field.options;
       if (!field.optionsUrl) return [];
       const url = field.optionsUrl.replaceAll(/\{[^}]+}/g, fieldId => {
-        const f = findField(fieldId, current);
-        return f ? f.value || "" : fieldId;
+        const f = findField(fieldId.replaceAll(/}|{/g, ""), current);
+        return f ? f.value || "" : fieldId; // finding the field with a blank value !== not finding the field at all; maybe {hiMom} wasn't a fieldId
       });
       if (!optionsCache[url]) {
         //log("FETCHing options from", url);

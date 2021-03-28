@@ -1,14 +1,34 @@
 import { IOption, IField, findField } from "../SuperDynamicForm/ISuperDynamicForm";
 import type { ISubmitDynamicFormResult } from "./api";
 
+// helper for nice one-liners
+function log(...args: any[]): true {
+    console.log("SERVER:", ...args);
+    return true;
+}
+
 export const mockSubmit = (form: IField[]): ISubmitDynamicFormResult => {
     if (Math.random() < 0.1) return { errors: ["Validation error 1", "Validation error 2"] };
     return { success: true }
 }
 
-export const mockOptionsFromServer = (optionsAtUrl: string): IOption[] => {
-    console.log("SERVER: mockOptionsFromServer url", optionsAtUrl);
-    switch (optionsAtUrl) {
+const provincesForCountry: Record<string, IOption[]> = {
+    'USA': [{ label: 'WA' }, { label: 'OR' }, { label: 'CA', }],
+    'China': [{ label: 'Tianjin' }, { label: 'Shanghai' }, { label: 'Beijing', }],
+};
+
+const citiesForProvince: Record<string, IOption[]> = {
+    'WA': [{ label: 'Seattle', }],
+    'OR': [{ label: 'Portland', }],
+    'CA': [{ label: 'Los Angeles', }, { label: 'San Francisco', }],
+    'Tianjin': [{ label: 'Tianjin', }],
+    'Shanghai': [{ label: 'Shanghai', }],
+    'Beijing': [{ label: 'Beijing', }],
+};
+
+export const mockOptionsFromServer = (url: string): IOption[] => {
+    log("mockOptionsFromServer url", url);
+    switch (url) {
         case "/options/s2.radios1":
             return [
                 { label: "Option 1", value: "one" },
@@ -25,19 +45,27 @@ export const mockOptionsFromServer = (optionsAtUrl: string): IOption[] => {
                 { label: "Third Option 2", value: "two" }
             ];
         default:
-            console.error('HTTP 404: ' + optionsAtUrl);
+            // not caring about upper/lower case values
+            // not caring about where in the url the value is (always assuming at the end)
+            // not caring about values which have a / ? & = in them
+            // not caring about making an incredible well-polished mock server
+            const i = Math.max(url.lastIndexOf('/'), url.lastIndexOf('?'), url.lastIndexOf('&'), url.lastIndexOf('='));
+            const bossValue = url.substr(i + 1);
+            if (url.startsWith('/provincesForCountry') && provincesForCountry[bossValue]) return provincesForCountry[bossValue];
+            if (url.startsWith('/citiesForProvince') && citiesForProvince[bossValue]) return citiesForProvince[bossValue];
+            log('HTTP 404: ' + url);
             return [] as IOption[];
     }
 }
 
-interface ICond {
-    ifTheField: string;
-    hasTheValue: string;
-    thenShowField: string;
+interface IConditionsOnFields {
+    ifTheField: string; // field.id
+    hasTheValue: string; // "*" means "anything that would pass a IsRequired validation"
+    thenShowField: string; // field.id
 }
 
 export const mockDataFromServer = (formAsIs?: IField[]) => {
-    const conditionals: ICond[] = [
+    const conditions: IConditionsOnFields[] = [
         {
             ifTheField: "s2.radios1",
             hasTheValue: "two",
@@ -65,30 +93,35 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         },
     ];
 
-    const fields = formAsIs || defaultInitialForm;
-    //if (formAsIs) console.log("SERVER: received", formAsIs);
+    const returnValueHolder: IField = { id: 'ROOT', type: 'text', label: '', fields: [] } as IField;
+
+    const fields = formAsIs || returnValueHolder.fields;
+    //if (formAsIs) log("received", formAsIs);
 
     const addField = (parentField: IField | null, newSubField: IField): IField | null => {
         if (!parentField) return null; // parent field was conditional, and removed.
         if (!parentField.fields) parentField.fields = [];
-        const conditionalOn = conditionals.find(f => f.thenShowField === newSubField.id);
-        if (conditionalOn) {
-            //console.log("SERVER:", newSubField.id, 'is conditional on the value of', conditionalOn.independentId);
-            const independentFieldCurrentValue = findField(conditionalOn.ifTheField, fields)?.value;
-            if (!['*', independentFieldCurrentValue].includes(conditionalOn.hasTheValue))
-                return null;
+        const cond = conditions.find(f => f.thenShowField === newSubField.id);
+        if (cond) {
+            //log(`if ${cond.ifTheField} has ${cond.hasTheValue === '*' ? 'any value' : cond.hasTheValue} then show the field ${cond.thenShowField}`);
+            const independentField = findField(cond.ifTheField, fields);
+            if (!independentField) return log(`While rendering ${newSubField.id}, ${cond.ifTheField} doesn't exist.  (Was it also conditional?)`) && null;
+            const independentFieldCurrentValue = independentField?.value;
+            if (cond.hasTheValue === '*') {
+                if (!independentFieldCurrentValue)
+                    return log(`${cond.ifTheField} has no value yet`) && null;
+            }
+            else if (cond.hasTheValue != independentFieldCurrentValue)
+                return log(`${cond.ifTheField} had ${independentFieldCurrentValue} instead of ${cond.hasTheValue}`) && null;
         }
         parentField.fields.push(newSubField);
         newSubField.value = findField(newSubField.id, fields)?.value;
-        if (conditionals.find(f => newSubField.id === f.ifTheField))
-            newSubField.hasConditionalFields = true;
-        //if (newSubField.hasConditionalFields) console.log("SERVER:", newSubField.id, 'has conditional fields');
+        if (conditions.find(f => f.ifTheField === newSubField.id)) newSubField.hasConditionalFields = true;
+        //if (newSubField.hasConditionalFields) log(newSubField.id, 'has conditional fields');
         return newSubField;
     }
 
-    const root: IField = { id: 'ROOT', type: 'text', label: '', fields: [] } as IField;
-
-    const s1 = addField(root, {
+    const s1 = addField(returnValueHolder, {
         type: "section",
         label: "Page 1",
         id: "s1",
@@ -145,7 +178,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         optionsUrl: '/citiesForProvince/{s1.where.province}'
     });
 
-    const s2 = addField(root, {
+    const s2 = addField(returnValueHolder, {
         type: "section",
         label: "Page 2",
         id: "s2",
@@ -163,7 +196,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         id: "s2.condtext",
     });
 
-    const s3 = addField(root, {
+    const s3 = addField(returnValueHolder, {
         type: "section",
         label: "Page 3a",
         id: "s3",
@@ -175,7 +208,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         optionsUrl: "/options/s3.moreradio",
     });
 
-    const s4 = addField(root, {
+    const s4 = addField(returnValueHolder, {
         type: "section",
         label: "Page 3b",
         id: "s4",
@@ -212,7 +245,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         id: "s4.phone"
     });
 
-    const s5 = addField(root, {
+    const s5 = addField(returnValueHolder, {
         type: "section",
         label: "Page 4",
         id: "s5",
@@ -228,126 +261,6 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         id: "s5.sep"
     });
 
-    console.log("SERVER: returns", root.fields);
-    return root.fields!;
+    log(formAsIs ? 'pseudoSubmit' : '', "returns", returnValueHolder.fields);
+    return returnValueHolder.fields!;
 }
-
-const defaultInitialForm: IField[] = [
-    {
-        type: "section",
-        label: "Page 1",
-        id: "s1",
-        fields: [
-            {
-                type: "field_group",
-                label: "Name",
-                id: "s1.g1",
-                fields: [
-                    {
-                        label: "First Name",
-                        type: "text",
-                        id: "s1.g1.firstname"
-                    },
-                    {
-                        label: "Last Name",
-                        type: "text",
-                        id: "s1.g1.lastname"
-                    }
-                ]
-            },
-            {
-                label: "Email",
-                type: "email",
-                id: "s1.email"
-            },
-            {
-                label: "Phone",
-                type: "text",
-                id: "s1.phone"
-            }
-        ]
-    },
-    {
-        type: "section",
-        label: "Page 2",
-        id: "s2",
-        fields: [
-            {
-                label: "Radio Buttons 1",
-                type: "pick1",
-                id: "s2.radios1",
-                optionsUrl: "/options/s2.radios1",
-            },
-            {
-                label: "Conditional Field",
-                type: "text",
-                id: "s2.condtext",
-            }
-        ]
-    },
-    {
-        type: "section",
-        label: "Page 3a",
-        id: "s3",
-        fields: [
-            {
-                label: "More radio buttons",
-                type: "pick1",
-                id: "s3.moreradio",
-                optionsUrl: "/options/s3.moreradio",
-            }
-        ]
-    },
-    {
-        type: "section",
-        label: "Page 3b",
-        id: "s4",
-        fields: [
-            {
-                label: "Something to toggle",
-                type: "pick1",
-                id: "s4.toggle",
-                optionsUrl: "/options/s4.toggle",
-            },
-            {
-                type: "field_group",
-                label: "Name",
-                id: "s4.g1",
-                fields: [
-                    {
-                        label: "First Name",
-                        type: "text",
-                        id: "s4.g1.fname"
-                    },
-                    {
-                        label: "Last Name",
-                        type: "text",
-                        id: "s4.g1.lname"
-                    }
-                ]
-            },
-            {
-                label: "Email",
-                type: "email",
-                id: "s4.email"
-            },
-            {
-                label: "Phone",
-                type: "text",
-                id: "s4.phone"
-            }
-        ]
-    },
-    {
-        type: "section",
-        label: "Page 4",
-        id: "s5",
-        fields: [
-            {
-                label: "Final Comment",
-                type: "text",
-                id: "s5.final"
-            }
-        ]
-    }
-];

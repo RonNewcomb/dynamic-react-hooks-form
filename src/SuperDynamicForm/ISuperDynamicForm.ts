@@ -22,7 +22,7 @@ export interface IField {
 
 export interface IOption {
     label: string;
-    value: string;
+    value?: string; // if missing, use label as value
 }
 
 export function findField(fieldId: string, fields?: IField[]): IField | undefined {
