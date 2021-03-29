@@ -30,6 +30,17 @@ export const App = () => {
           }
           .superDynamicForm [removing] {
           }
+          .dynSubmitRow {
+            display: flex;
+            justify-content: space-around;
+          }
+          .dynSubmitRow button {
+            padding: 5px 10px;
+            border-radius: 0.7em / 50%;
+            border: 0;
+            background-color: ${topbarColor};
+            color: ${textColorInverse};
+          }
           .dynField {
             margin: ${formFieldMarginBetween} 0;
           }
@@ -47,8 +58,7 @@ export const App = () => {
             margin-bottom: 20px;
           }
           .DynRadioset {
-            display: flex;
-            
+            display: flex;            
           }
           .DynRadioset > label {
             display: inline-block; /* so width works */
@@ -58,6 +68,12 @@ export const App = () => {
             display: flex;
             flex-direction: column;
             border-left: 1px dotted ${textColor};
+          }
+
+          .error {
+            background-color: darkred;
+            padding: 0.5em 1.5em;
+            color: white;
           }
 
           body {

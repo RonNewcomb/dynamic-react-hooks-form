@@ -1,10 +1,11 @@
 import { useState, useMemo, useCallback } from "react";
 import { findField, IField, IOption } from "./ISuperDynamicForm";
-import { renderFields } from "./SuperDynamicFields";
+import { renderFields, DynSubmitRow } from "./SuperDynamicFields";
 import { getDynamicForm, getOptions, pseudoSubmit, submitDynamicForm } from "../backend/api";
 import { useAsync } from "../util/useAsync";
 import { Loading } from "../util/Loading";
 import { Overlay } from "../util/Overlay";
+import { Err } from "../util/Err";
 
 interface IProps {
   query: string;
@@ -83,18 +84,16 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
   const utilityBelt: IUtilityBelt = { captureValueAndCheckConditions, fetchOptions, onSubmit, forceRender };
 
   if (response.isLoading) return log("/RENDER (loading)") && <Loading />;
-  if (response.error) return log("/RENDER (initial load error)") && <>{response.error.message}</>;
-  if (!fields || !fields.length) return log("/RENDER (no fields)") && <>The form has no fields in it.</>;
+  if (response.error) return log("/RENDER (initial load error)") && <Err>{response.error.message}</Err>;
+  if (!fields || !fields.length) return log("/RENDER (no fields)") && <Err>The form has no fields in it.</Err>;
   if (!theForm || !theForm.length) setTheForm(fields); // initialization after useAsync(getDynamicForm) returns
 
   return (
     <Overlay if={numPendingPromises !== 0}>
       <form onSubmit={onSubmit} className="superDynamicForm">
         {renderFields(theForm, utilityBelt)}
-        {serverError && <div>{serverError.message}</div>}
-        <div className="dynSubmitRow dynField">
-          <button type="submit">Submit</button>
-        </div>
+        {serverError && <Err>{serverError.message}</Err>}
+        {!theForm.find(f => f.type === "submit") && <DynSubmitRow field={{ label: "Submit" } as IField} fns={utilityBelt} />}
       </form>
       {log("/RENDER")}
     </Overlay>

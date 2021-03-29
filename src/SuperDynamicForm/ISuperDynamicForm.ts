@@ -1,4 +1,4 @@
-export type SuperDynamicFormFieldTypes = 'section' | 'field_group' | 'pick1' | 'text' | 'email' | 'number' | 'separator';
+export type SuperDynamicFormFieldTypes = 'section' | 'field_group' | 'pick1' | 'text' | 'email' | 'number' | 'separator' | 'submit';
 
 export interface IField {
     id: string;

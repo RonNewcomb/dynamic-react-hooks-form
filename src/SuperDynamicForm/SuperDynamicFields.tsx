@@ -1,10 +1,11 @@
-import * as React from "react";
+import { Fragment } from "react";
+import { Err } from "../util/Err";
 import { useAsync } from "../util/useAsync";
 import type { IField, IOption } from "./ISuperDynamicForm";
 import type { IUtilityBelt } from "./SuperDynamicForm";
 
-export const renderFields = (fields: IField[], fns: IUtilityBelt) =>
-  fields.map(field => <React.Fragment key={field.id}>{renderField(field, fns)}</React.Fragment>);
+export const renderFields = (fields: IField[], utilityBelt: IUtilityBelt) =>
+  fields.map(field => <Fragment key={field.id}>{renderField(field, utilityBelt)}</Fragment>);
 
 export const renderField = (field: IField, utilityBelt: IUtilityBelt) => {
   switch (field.type) {
@@ -22,6 +23,8 @@ export const renderField = (field: IField, utilityBelt: IUtilityBelt) => {
       return <DynInputField field={field} fns={utilityBelt} type="email" />;
     case "number":
       return <DynInputField field={field} fns={utilityBelt} type="number" />;
+    case "submit":
+      return <DynSubmitRow field={field} fns={utilityBelt} />;
     default:
       return <div>Unknown field type '${field.type}'</div>;
   }
@@ -67,7 +70,7 @@ export const DynRadioset = ({ field, fns }: IProps) => {
           const optionValue = option.value ?? option.label; // so .value is optional
           const uniqueId = field.id + optionValue; // because option.value might be something like "yes" which is used a dozen times on the same page
           return (
-            <label htmlFor={uniqueId} key={optionValue}>
+            <label htmlFor={uniqueId} key={uniqueId}>
               <input
                 type="radio"
                 id={uniqueId}
@@ -82,7 +85,32 @@ export const DynRadioset = ({ field, fns }: IProps) => {
           );
         })}
       </div>
-      {response.error && <div>{response.error.message}</div>}
+      {response.error && <Err>{response.error.message}</Err>}
     </div>
   );
 };
+
+export const DynSubmitRow = ({ field, fns }: IProps) => (
+  <div className="dynSubmitRow dynField">
+    {!field.options || !field.options.length ? (
+      <button type="submit">{field.label}</button>
+    ) : (
+      field.options.map(option => {
+        const optionValue = option.value ?? option.label; // because .value is optional
+        const uniqueId = field.id + optionValue;
+        return (
+          <button
+            type="submit"
+            key={uniqueId}
+            id={uniqueId}
+            name={field.id}
+            value={optionValue}
+            onClick={_ => fns.captureValueAndCheckConditions(field, optionValue)}
+          >
+            {option.label}
+          </button>
+        );
+      })
+    )}
+  </div>
+);

@@ -256,11 +256,26 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         type: "text",
         id: "s5.final"
     });
+
     addField(returnValueHolder, {
         label: " ",
         type: "separator",
         id: "finalBeforeSubmit"
     });
+    if (false) {
+        addField(returnValueHolder, {
+            label: "Submit",
+            type: "submit",
+            id: "submitBtn"
+        });
+    } else {
+        addField(returnValueHolder, {
+            label: "Completion options",
+            type: "submit",
+            id: "submitBtns",
+            options: [{ label: "Save as Draft" }, { label: "Save" }]
+        });
+    }
 
     log(formAsIs ? 'pseudoSubmit' : '', "returns", returnValueHolder.fields);
     return returnValueHolder.fields!;
