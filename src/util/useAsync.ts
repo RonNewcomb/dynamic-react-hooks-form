@@ -13,8 +13,6 @@ export interface IUseAsyncResponse<T> {
 /** return type of the useAsync hook, a tuple [value, responseObj] */
 export type IUseAsync<T> = [T | undefined, IUseAsyncResponse<T>];
 
-const NoFunction = () => Promise.resolve(undefined as any);
-
 /** 
  * Parameters are your gettor function followed by your gettor's parameters.
  *
@@ -33,23 +31,21 @@ const NoFunction = () => Promise.resolve(undefined as any);
  * Calling response.refresh() will immediately set Value & response.error undefined.
  */
 export function useAsync<T, F extends IUseAsyncGettor<T>>(gettor: F, ...rest: Parameters<F>): IUseAsync<T> {
-  const [tuple, setTuple] = useState<IUseAsync<T>>([undefined, { isLoading: true, refresh: NoFunction, promise: Promise.resolve() }]);
   const [parameters, setParameters] = useState(rest);
-
-  if (parameters !== rest && parameters.some((_, i) => parameters[i] !== rest[i])) setParameters(rest); // change detection on parameters
+  if (parameters !== rest && parameters.some((_, i) => parameters[i] !== rest[i]))
+    setParameters(rest);
 
   const refresh: () => void = useCallback(() => {
     const promise: Promise<T | void> = gettor
       .apply(null, parameters)
-      .then(value => setTuple([value, { isLoading: false, error: undefined, refresh, promise }]))
-      .catch(error => setTuple([undefined, { isLoading: false, error, refresh, promise }]));
-
-    setTuple([undefined, { isLoading: true, error: undefined, refresh, promise }]);
-
+      .then(value => setTuple([value, { isLoading: false, promise, refresh, error: undefined }]))
+      .catch(error => setTuple([undefined, { isLoading: false, promise, refresh, error }]));
+    setTuple([undefined, { isLoading: true, promise, refresh, error: undefined }]);
     return promise;
   }, [gettor, parameters]);
 
   useEffect(refresh, [refresh]);
 
+  const [tuple, setTuple] = useState<IUseAsync<T>>([undefined, { isLoading: true, refresh, promise: Promise.resolve() }]);
   return tuple;
 }

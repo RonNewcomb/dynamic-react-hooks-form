@@ -20,6 +20,7 @@ interface IProps {
  */
 export const Err = (props: PropsWithChildren<IProps>) => {
   const array = !props.errors ? [] : Array.isArray(props.errors) ? props.errors : [props.errors];
+  if (!array.length && !props.children) return null;
   return (
     <div className="error">
       {props.children}
