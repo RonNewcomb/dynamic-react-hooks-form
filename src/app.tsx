@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { IField } from "./SuperDynamicForm/ISuperDynamicForm";
 import { SuperDynamicForm } from "./SuperDynamicForm/SuperDynamicForm";
+import { getDynamicForm, getOptions, pseudoSubmit, submitDynamicForm } from "./backend/api";
 
 export const App = () => {
   const [result, setResult] = useState<IField[]>();
@@ -16,8 +17,20 @@ export const App = () => {
         <div>Item 2</div>
       </aside>
       <main>
+        {!result && (
+          <SuperDynamicForm
+            getDynamicForm={() => getDynamicForm("?userId=orWhatever", "http://www.example.com")}
+            getOptions={getOptions}
+            pseudoSubmit={pseudoSubmit}
+            submitDynamicForm={form =>
+              submitDynamicForm(form).then(r => {
+                if (!r.errors || !r.errors.length) setResult(form);
+                return r.errors || [];
+              })
+            }
+          />
+        )}
         {result && <pre>{JSON.stringify(result, null, 2)}</pre>}
-        {!result && <SuperDynamicForm query="?querystring=" endpoint="http://hostname.com" onDone={setResult} />}
       </main>
       <footer>&copy; ~~~ ~~ ~~~~ ~~ </footer>
       <style>

@@ -1,16 +1,16 @@
 import { useState, useMemo, useCallback } from "react";
 import { findField, IField, IOption } from "./ISuperDynamicForm";
 import { renderFields, DynSubmitRow } from "./SuperDynamicFields";
-import { getDynamicForm, getOptions, pseudoSubmit, submitDynamicForm } from "../backend/api";
 import { useAsync } from "../util/useAsync";
 import { Loading } from "../util/Loading";
 import { Overlay } from "../util/Overlay";
 import { Err } from "../util/Err";
 
 interface IProps {
-  query: string;
-  endpoint: string;
-  onDone?: (finalForm: IField[]) => any;
+  getDynamicForm: () => Promise<IField[]>;
+  getOptions: (url: string) => Promise<IOption[]>;
+  pseudoSubmit: (form: IField[]) => Promise<IField[]>;
+  submitDynamicForm: (form: IField[]) => Promise<string[]>;
 }
 
 export interface IUtilityBelt {
@@ -20,11 +20,11 @@ export interface IUtilityBelt {
   onSubmit: (ev: React.FormEvent<HTMLFormElement>) => Promise<any>;
 }
 
-export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
+export const SuperDynamicForm = ({ getDynamicForm, getOptions, pseudoSubmit, submitDynamicForm }: IProps) => {
   log("RENDER SuperDynamicForm");
-  const [fields, response] = useAsync<IField[], typeof getDynamicForm>(getDynamicForm, query, endpoint);
+  const [fields, response] = useAsync<IField[], typeof getDynamicForm>(getDynamicForm);
   const [numPendingPromises, setNumPendingPromises] = useState(0 /* excludes useAsync's promise */);
-  const [serverError, setServerError] = useState(response.error);
+  const [formErrors, setFormErrors] = useState<undefined | Error | string | (string | Error)[]>();
   const [theForm, setTheForm] = useState(fields || []);
 
   const [render, setRender] = useState(0);
@@ -38,13 +38,16 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
       if (!field.optionsUrl) return [];
       const url = field.optionsUrl.replaceAll(/\{[^}]+}/g, fieldId => {
         const f = findField(fieldId.replaceAll(/}|{/g, ""), theForm);
-        return f ? f.value || "" : fieldId; // finding the field with a blank value !== not finding the field at all; maybe {hiMom} wasn't a fieldId
+        return f ? f.value || "" : fieldId; // finding the field with a blank value !== not finding the field at all; maybe {hiMom} wasn't supposed to be a fieldId
       });
       if (!optionsCache[url]) {
         //log("FETCHing options from", url);
         setNumPendingPromises(x => x + 1);
         optionsCache[url] = getOptions(url)
-          .catch(setServerError)
+          .catch(e => {
+            setFormErrors(e);
+            delete optionsCache[url]; // delete the rejected promise from the cache so we can re-try later
+          })
           .then(opts => (field.options = opts || []))
           .finally(() => setNumPendingPromises(x => x - 1));
       }
@@ -63,7 +66,7 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
       setNumPendingPromises(x => x + 1);
       return pseudoSubmit(theForm)
         .then(setTheForm)
-        .catch(setServerError)
+        .catch(setFormErrors)
         .finally(() => setNumPendingPromises(x => x - 1));
     },
     [theForm, pseudoSubmit, forceRender]
@@ -74,11 +77,11 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
       ev.preventDefault();
       setNumPendingPromises(x => x + 1);
       return submitDynamicForm(theForm)
-        .then(_ => (onDone ? onDone(theForm) : setServerError({ message: "Success!" } as Error)))
-        .catch(setServerError)
+        .then(result => (result && result.length ? setFormErrors(result) : setFormErrors(undefined)))
+        .catch(setFormErrors)
         .finally(() => setNumPendingPromises(x => x - 1));
     },
-    [theForm, submitDynamicForm, onDone]
+    [theForm, submitDynamicForm]
   );
 
   const utilityBelt: IUtilityBelt = { captureValueAndCheckConditions, fetchOptions, onSubmit, forceRender };
@@ -92,7 +95,7 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
     <Overlay if={numPendingPromises !== 0}>
       <form onSubmit={onSubmit} className="superDynamicForm">
         {renderFields(theForm, utilityBelt)}
-        {serverError && <Err>{serverError.message}</Err>}
+        {formErrors && <Err errors={formErrors} />}
         {!theForm.find(f => f.type === "submit") && <DynSubmitRow field={{ label: "Submit" } as IField} fns={utilityBelt} />}
       </form>
       {log("/RENDER")}
