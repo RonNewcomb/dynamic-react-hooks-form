@@ -45,7 +45,7 @@ export const mockOptionsFromServer = (url: string): IOption[] => {
                 { label: "Third Option 2", value: "two" }
             ];
         default:
-            // not caring about upper/lower case values
+            // not caring about uppercase/lowercase text
             // not caring about where in the url the value is (always assuming at the end)
             // not caring about values which have a / ? & = in them
             // not caring about making an incredible well-polished mock server
@@ -65,6 +65,8 @@ interface IConditionsOnFields {
 }
 
 export const mockDataFromServer = (formAsIs?: IField[]) => {
+    //if (formAsIs) log("received", formAsIs);
+
     const conditions: IConditionsOnFields[] = [
         {
             ifTheField: "s2.radios1",
@@ -96,7 +98,6 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
     const returnValueHolder: IField = { id: 'ROOT', type: 'text', label: '', fields: [] } as IField;
 
     const fields = formAsIs || returnValueHolder.fields;
-    //if (formAsIs) log("received", formAsIs);
 
     const addField = (parentField: IField | null, newSubField: IField): IField | null => {
         if (!parentField) return null; // parent field was conditional, and removed.
@@ -116,14 +117,14 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         }
         parentField.fields.push(newSubField);
         newSubField.value = findField(newSubField.id, fields)?.value;
-        if (conditions.find(f => f.ifTheField === newSubField.id)) newSubField.hasConditionalFields = true;
-        //if (newSubField.hasConditionalFields) log(newSubField.id, 'has conditional fields');
+        if (conditions.find(f => f.ifTheField === newSubField.id))
+            newSubField.hasConditionalFields = true;
         return newSubField;
     }
 
     const s1 = addField(returnValueHolder, {
         type: "section",
-        label: "Page 1",
+        label: "Section 1",
         id: "s1",
     });
     const s1g1 = addField(s1, {
@@ -152,7 +153,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         id: "s1.phone"
     });
     const where = addField(s1, {
-        label: "",
+        label: "Origin",
         type: "field_group",
         id: "s1.where"
     });
@@ -180,7 +181,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
 
     const s2 = addField(returnValueHolder, {
         type: "section",
-        label: "Page 2",
+        label: "Section 2",
         id: "s2",
     });
     const s2radios1 = addField(s2, {
@@ -198,7 +199,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
 
     const s3 = addField(returnValueHolder, {
         type: "section",
-        label: "Page 3a",
+        label: "Section 3a",
         id: "s3",
     });
     addField(s3, {
@@ -210,7 +211,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
 
     const s4 = addField(returnValueHolder, {
         type: "section",
-        label: "Page 3b",
+        label: "Section 3b",
         id: "s4",
     });
     addField(s4, {
@@ -247,7 +248,7 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
 
     const s5 = addField(returnValueHolder, {
         type: "section",
-        label: "Page 4",
+        label: "Section 4",
         id: "s5",
     });
     addField(s5, {
@@ -255,10 +256,10 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         type: "text",
         id: "s5.final"
     });
-    addField(s5, {
+    addField(returnValueHolder, {
         label: " ",
         type: "separator",
-        id: "s5.sep"
+        id: "finalBeforeSubmit"
     });
 
     log(formAsIs ? 'pseudoSubmit' : '', "returns", returnValueHolder.fields);

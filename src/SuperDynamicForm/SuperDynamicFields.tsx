@@ -15,7 +15,7 @@ export const renderField = (field: IField, utilityBelt: IUtilityBelt) => {
     case "pick1":
       return <DynRadioset field={field} fns={utilityBelt} />;
     case "separator":
-      return <hr />;
+      return <hr className="dynSeparator dynField" />;
     case "text":
       return <DynInputField field={field} fns={utilityBelt} type="text" />;
     case "email":
@@ -37,21 +37,21 @@ interface IDynInputFieldProps extends IProps {
 }
 
 export const DynGroup = ({ field, fns }: IProps) => (
-  <div className="dynGroup">
-    <h3>{field.label}</h3>
-    {renderFields(field.fields || [], fns)}
+  <div className="dynGroup dynField">
+    <label>{field.label}</label>
+    <div>{renderFields(field.fields || [], fns)}</div>
   </div>
 );
 
 export const DynFieldSet = ({ field, fns }: IProps) => (
-  <fieldset className="dynFieldSet">
-    <h3>{field.label}</h3>
-    {renderFields(field.fields || [], fns)}
+  <fieldset className="dynFieldSet dynField">
+    <legend>{field.label}</legend>
+    <div>{renderFields(field.fields || [], fns)}</div>
   </fieldset>
 );
 
 export const DynInputField = ({ field, fns, type }: IDynInputFieldProps) => (
-  <div className="DynInputField">
+  <div className="dynInputField dynField">
     <label htmlFor={field.id}>{field.label}</label>
     <input type={type || "text"} id={field.id} name={field.id} value={field.value} onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)} />
   </div>
@@ -60,26 +60,28 @@ export const DynInputField = ({ field, fns, type }: IDynInputFieldProps) => (
 export const DynRadioset = ({ field, fns }: IProps) => {
   const [options, response] = useAsync<IOption[], typeof fns.fetchOptions>(fns.fetchOptions, field);
   return (
-    <div className="DynRadioset">
-      <h3>{field.label}</h3>
-      {(options || []).map(option => {
-        const optionValue = option.value ?? option.label; // so .value is optional
-        const uniqueId = field.id + optionValue; // because option.value might be something like "yes" which is used a dozen times on the same page
-        return (
-          <label htmlFor={uniqueId} key={optionValue}>
-            <input
-              type="radio"
-              id={uniqueId}
-              name={field.id}
-              disabled={response.isLoading}
-              value={optionValue}
-              checked={field.value === optionValue}
-              onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)}
-            />
-            {option.label}
-          </label>
-        );
-      })}
+    <div className={`dynRadioset dynField ${response.isLoading ? "dynLoading" : ""}`}>
+      <label>{field.label}</label>
+      <div>
+        {(options || []).map(option => {
+          const optionValue = option.value ?? option.label; // so .value is optional
+          const uniqueId = field.id + optionValue; // because option.value might be something like "yes" which is used a dozen times on the same page
+          return (
+            <label htmlFor={uniqueId} key={optionValue}>
+              <input
+                type="radio"
+                id={uniqueId}
+                name={field.id}
+                disabled={response.isLoading}
+                value={optionValue}
+                checked={field.value === optionValue}
+                onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)}
+              />
+              {option.label}
+            </label>
+          );
+        })}
+      </div>
       {response.error && <div>{response.error.message}</div>}
     </div>
   );

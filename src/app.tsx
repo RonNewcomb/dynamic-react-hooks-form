@@ -30,6 +30,35 @@ export const App = () => {
           }
           .superDynamicForm [removing] {
           }
+          .dynField {
+            margin: ${formFieldMarginBetween} 0;
+          }
+          .dynInputField > label {
+            display: inline-block; /* so width works */
+            width: ${formFieldLeftColumnWidth};
+          }
+          .dynGroup {
+          }
+          .dynGroup > label {
+            font-weight: 800;
+          }
+          .dynGroup > div {
+            padding: 15px;
+            margin-bottom: 20px;
+          }
+          .DynRadioset {
+            display: flex;
+            
+          }
+          .DynRadioset > label {
+            display: inline-block; /* so width works */
+            width: ${formFieldLeftColumnWidth};
+          }
+          .DynRadioset > div {
+            display: flex;
+            flex-direction: column;
+            border-left: 1px dotted ${textColor};
+          }
 
           body {
             font-family: Verdana, sans-serif;
@@ -88,3 +117,5 @@ const panel = `
   border-radius: 10px;
   padding: ${panelPadding}px;
 `;
+const formFieldLeftColumnWidth = "30%";
+const formFieldMarginBetween = "8px";

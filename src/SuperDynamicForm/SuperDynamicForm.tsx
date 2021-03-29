@@ -22,9 +22,9 @@ export interface IUtilityBelt {
 export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
   log("RENDER SuperDynamicForm");
   const [fields, response] = useAsync<IField[], typeof getDynamicForm>(getDynamicForm, query, endpoint);
-  const [numPendingPromises, setNumPendingPromises] = useState(0);
-  const [current, setCurrent] = useState(fields || []);
+  const [numPendingPromises, setNumPendingPromises] = useState(0 /* excludes useAsync's promise */);
   const [serverError, setServerError] = useState(response.error);
+  const [theForm, setTheForm] = useState(fields || []);
 
   const [render, setRender] = useState(0);
   const forceRender = useCallback(() => setRender(x => x + 1), []);
@@ -36,7 +36,7 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
       if (field.options && field.options.length) return field.options;
       if (!field.optionsUrl) return [];
       const url = field.optionsUrl.replaceAll(/\{[^}]+}/g, fieldId => {
-        const f = findField(fieldId.replaceAll(/}|{/g, ""), current);
+        const f = findField(fieldId.replaceAll(/}|{/g, ""), theForm);
         return f ? f.value || "" : fieldId; // finding the field with a blank value !== not finding the field at all; maybe {hiMom} wasn't a fieldId
       });
       if (!optionsCache[url]) {
@@ -49,7 +49,7 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
       }
       return optionsCache[url];
     },
-    [current, setNumPendingPromises, setServerError, getOptions]
+    [theForm, getOptions]
   );
 
   const captureValueAndCheckConditions = useCallback(
@@ -60,24 +60,24 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
       if (!field.hasConditionalFields) return forceRender();
       //log("FETCHing conditional fields");
       setNumPendingPromises(x => x + 1);
-      return pseudoSubmit(current)
-        .then(setCurrent)
+      return pseudoSubmit(theForm)
+        .then(setTheForm)
         .catch(setServerError)
         .finally(() => setNumPendingPromises(x => x - 1));
     },
-    [current, setNumPendingPromises, setServerError, setCurrent, forceRender, pseudoSubmit]
+    [theForm, pseudoSubmit, forceRender]
   );
 
   const onSubmit = useCallback(
     async (ev: React.FormEvent<HTMLFormElement>) => {
       ev.preventDefault();
       setNumPendingPromises(x => x + 1);
-      return submitDynamicForm(current)
-        .then(_ => (onDone ? onDone(current) : setServerError({ message: "Success!" } as Error)))
+      return submitDynamicForm(theForm)
+        .then(_ => (onDone ? onDone(theForm) : setServerError({ message: "Success!" } as Error)))
         .catch(setServerError)
         .finally(() => setNumPendingPromises(x => x - 1));
     },
-    [current, setNumPendingPromises, setServerError, onDone, submitDynamicForm]
+    [theForm, submitDynamicForm, onDone]
   );
 
   const utilityBelt: IUtilityBelt = { captureValueAndCheckConditions, fetchOptions, onSubmit, forceRender };
@@ -85,14 +85,14 @@ export const SuperDynamicForm = ({ query, endpoint, onDone }: IProps) => {
   if (response.isLoading) return log("/RENDER (loading)") && <Loading />;
   if (response.error) return log("/RENDER (initial load error)") && <>{response.error.message}</>;
   if (!fields || !fields.length) return log("/RENDER (no fields)") && <>The form has no fields in it.</>;
-  if (!current || !current.length) setCurrent(fields); // initialization after useAsync(getDynamicForm) returns
+  if (!theForm || !theForm.length) setTheForm(fields); // initialization after useAsync(getDynamicForm) returns
 
   return (
     <Overlay if={numPendingPromises !== 0}>
       <form onSubmit={onSubmit} className="superDynamicForm">
-        {renderFields(current, utilityBelt)}
+        {renderFields(theForm, utilityBelt)}
         {serverError && <div>{serverError.message}</div>}
-        <div className="dynSubmitRow">
+        <div className="dynSubmitRow dynField">
           <button type="submit">Submit</button>
         </div>
       </form>

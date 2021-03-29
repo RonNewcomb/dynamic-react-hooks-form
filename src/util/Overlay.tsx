@@ -7,6 +7,8 @@ const overlay: React.CSSProperties = {
   right: 0,
   top: 0,
   bottom: 0,
+  borderRadius: 10,
+  margin: -14,
 };
 
 interface IProps extends React.PropsWithChildren<any> {
