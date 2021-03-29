@@ -1,4 +1,4 @@
-import { IOption, IField, findField } from "../SuperDynamicForm/ISuperDynamicForm";
+import { IOption, IField, findField } from "../SuperDynamicForm/SuperDynamicForm";
 import type { ISubmitDynamicFormResult } from "./api";
 
 // helper for nice one-liners

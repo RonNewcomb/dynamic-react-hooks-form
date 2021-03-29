@@ -1,34 +1,21 @@
-import { Fragment } from "react";
+import { IField, IOption, IUtilityBelt, renderFields, configureEnumsToElements } from "./SuperDynamicForm";
 import { useAsync } from "../util/useAsync";
 import { Err } from "../util/Err";
-import type { IField, IOption } from "./ISuperDynamicForm";
-import type { IUtilityBelt } from "./SuperDynamicForm";
 
-export const renderFields = (fields: IField[], utilityBelt: IUtilityBelt) =>
-  fields.map(field => <Fragment key={field.id}>{renderField(field, utilityBelt)}</Fragment>);
+/** allowed values of IField.type */
+export type SuperDynamicFormFieldTypes = "section" | "field_group" | "pick1" | "text" | "email" | "number" | "separator" | "submit";
 
-export const renderField = (field: IField, utilityBelt: IUtilityBelt) => {
-  switch (field.type) {
-    case "section":
-      return <DynGroup field={field} fns={utilityBelt} />;
-    case "field_group":
-      return <DynFieldSet field={field} fns={utilityBelt} />;
-    case "pick1":
-      return <DynRadioset field={field} fns={utilityBelt} />;
-    case "separator":
-      return <hr className="dynSeparator dynField" />;
-    case "text":
-      return <DynInputField field={field} fns={utilityBelt} type="text" />;
-    case "email":
-      return <DynInputField field={field} fns={utilityBelt} type="email" />;
-    case "number":
-      return <DynInputField field={field} fns={utilityBelt} type="number" />;
-    case "submit":
-      return <DynSubmitRow field={field} fns={utilityBelt} />;
-    default:
-      return <div>Unknown field type '${field.type}'</div>;
-  }
-};
+/** mapping of IField.type to a component */
+configureEnumsToElements({
+  section: (field, utilityBelt) => <DynGroup field={field} fns={utilityBelt} />,
+  field_group: (field, utilityBelt) => <DynFieldSet field={field} fns={utilityBelt} />,
+  pick1: (field, utilityBelt) => <DynRadioset field={field} fns={utilityBelt} />,
+  separator: (field, utilityBelt) => <hr className="dynSeparator dynField" />,
+  text: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="text" />,
+  email: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="email" />,
+  number: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="number" />,
+  submit: (field, utilityBelt) => <DynSubmitRow field={field} fns={utilityBelt} />,
+});
 
 interface IProps {
   field: IField;

@@ -1,14 +1,29 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
-import { findField, IField, IOption } from "./ISuperDynamicForm";
-import { renderFields, DynSubmitRow } from "./SuperDynamicFields";
+import { useState, useMemo, useCallback, useEffect, Fragment } from "react";
 import { Err } from "../util/Err";
 
-interface IProps {
-  formFields: IField[];
-  getOptions: (url: string) => Promise<IOption[]>;
-  postForm: (form: IField[]) => Promise<IField[]>;
-  onSubmit: (form: IField[]) => Promise<string[]>;
-  onLoading?: (isLoading: boolean) => void;
+export interface IField {
+  id: string;
+  type: string;
+  label: string;
+
+  // raw value that user inputted into HTMLInputElement
+  // Sent to server on submit, sent & received from server on pseudoSubmit and maybe initial load as well
+  value?: string;
+
+  // if type == 'field_group' or 'section' or other such aggregate
+  fields?: IField[];
+
+  // if type is 'pick1'
+  options?: IOption[]; // if blank, .optionsUrl must have URL to get list
+  optionsUrl?: string; // if blank, .options must have list
+
+  // if true then requires pseudosubmit onChange
+  hasConditionalFields?: boolean;
+}
+
+export interface IOption {
+  label: string;
+  value?: string; // if missing, use label as value
 }
 
 export interface IUtilityBelt {
@@ -18,12 +33,32 @@ export interface IUtilityBelt {
   submit: (ev: React.FormEvent<HTMLFormElement>) => Promise<any>;
 }
 
-export const SuperDynamicForm = ({ formFields, getOptions, postForm, onSubmit, onLoading }: IProps) => {
+export type ISuperDynamicFieldMaker = (field: IField, utilityBelt: IUtilityBelt) => JSX.Element;
+let enumToElement: Record<string, ISuperDynamicFieldMaker> = {};
+export const configureEnumsToElements = (map: Record<string, ISuperDynamicFieldMaker>) => (enumToElement = map);
+
+export const renderField = (field: IField, utilityBelt: IUtilityBelt): JSX.Element => {
+  const makeElement = enumToElement[field.type];
+  return makeElement ? makeElement(field, utilityBelt) : <Err>Unknown field type {field.type}</Err>;
+};
+
+export const renderFields = (fields: IField[], utilityBelt: IUtilityBelt) =>
+  fields.map(field => <Fragment key={field.id}>{renderField(field, utilityBelt)}</Fragment>);
+
+interface IProps {
+  config?: Record<string, ISuperDynamicFieldMaker>; // or call configureEnumsToElements() once
+  formFields: IField[];
+  getOptions: (url: string) => Promise<IOption[]>;
+  postForm: (form: IField[]) => Promise<IField[]>;
+  onSubmit: (form: IField[]) => Promise<string[]>;
+  onLoading?: (isLoading: boolean) => void;
+}
+
+export const SuperDynamicForm = ({ config, formFields, getOptions, postForm, onSubmit, onLoading }: IProps) => {
   log("RENDER SuperDynamicForm");
   const [numPendingPromises, setNumPendingPromises] = useState(0 /* excludes useAsync's promise */);
   const [theForm, setTheForm] = useState(formFields);
   const [formErrors, setFormErrors] = useState<undefined | Error | string | (string | Error)[]>();
-
   const [render, setRender] = useState(0);
   const forceRender = useCallback(() => setRender(x => x + 1), []);
 
@@ -84,16 +119,29 @@ export const SuperDynamicForm = ({ formFields, getOptions, postForm, onSubmit, o
 
   if (!formFields || !formFields.length) return <Err>The form has no fields in it.</Err>;
   if (!theForm || !theForm.length) setTheForm(formFields); // initialization after useAsync(getDynamicForm) returns
+  if (config) enumToElement = config; // in case they didn't call configureEnumsToElements() from app.tsx or wherever
 
   return (
     <form onSubmit={submit} className="superDynamicForm">
       {renderFields(theForm, utilityBelt)}
       {formErrors && <Err errors={formErrors} />}
-      {!theForm.find(f => f.type === "submit") && <DynSubmitRow field={{ label: "Submit" } as IField} fns={utilityBelt} />}
+      {!theForm.some(f => f.type === "submit") && <button type="submit">Submit</button>}
       {log("/RENDER")}
     </form>
   );
 };
+
+// utility functions ///////////////
+
+export function findField(fieldId: string, fields?: IField[]): IField | undefined {
+  if (fields)
+    for (let f of fields) {
+      if (f.id === fieldId) return f;
+      const result = findField(fieldId, f.fields);
+      if (result) return result;
+    }
+  return undefined;
+}
 
 function log(...args: any[]): true {
   console.log(...args);

@@ -1,4 +1,4 @@
-import type { IOption, IField } from "../SuperDynamicForm/ISuperDynamicForm";
+import type { IOption, IField } from "../SuperDynamicForm/SuperDynamicForm";
 import * as MockServer from "./mockServer";
 
 export const milliseconds = (ms: number) => new Promise(r => setTimeout(r, ms));
