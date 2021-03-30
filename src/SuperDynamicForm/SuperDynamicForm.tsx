@@ -77,19 +77,36 @@ export interface IUtilityBelt {
   errorToElement: (str: undefined | string | Error | (Error | string)[]) => JSX.Element;
 }
 
-export const SuperDynamicForm = ({ submitButtonText, renderField, validate, formFields, getOptions, postForm, onSubmit, onLoading }: IProps) => {
+export const SuperDynamicForm = ({ formFields, renderField, validate, getOptions, postForm, onSubmit, submitButtonText, onLoading }: IProps) => {
   log("RENDER SuperDynamicForm");
-  const [numPendingPromises, setNumPendingPromises] = useState(0);
+
+  // main state (even if derived from props)
   const [theForm, setTheForm] = useState(formFields);
   const [formErrors, setFormErrors] = useState<undefined | Error | string | (string | Error)[]>();
-  const forceRender = useCallback(() => setTheForm(x => x.slice()), []);
 
+  // track server calls & inform parent component
+  const [numPendingPromises, setNumPendingPromises] = useState(0);
   useEffect(() => onLoading && onLoading(numPendingPromises > 0), [numPendingPromises > 0]);
 
-  const optionsCache = useMemo<Record<string, Promise<IOption[]>>>(() => ({}), []);
+  // cache all HTTP GET server calls
+  const optionsCache = useMemo<Record<string, Promise<IOption[]>>>(() => ({}), []); // url -> promise-of-results
+
+  // necessary?
+  const wrapField = useCallback(
+    (field: IField, utilityBelt: IUtilityBelt) => (
+      <div key={field.id} className="dynField">
+        {renderField(field, utilityBelt)}
+      </div>
+    ),
+    [renderField]
+  );
+
+  // begin creating UtilityBelt ////
+
+  const forceRender = useCallback(() => setTheForm(fields => fields.slice()), []);
 
   const errorToElement = useCallback(
-    (str: undefined | string | Error | (Error | string)[]) => {
+    (str: undefined | string | Error | (Error | string)[]): JSX.Element => {
       if (!str) return <></>;
       const array = Array.isArray(str) ? str : [str];
       const strings = array.map(e => (e instanceof Error ? e.message : e)).filter(x => !!x);
@@ -99,26 +116,14 @@ export const SuperDynamicForm = ({ submitButtonText, renderField, validate, form
     [renderField]
   );
 
-  const wrapField = useCallback(
-    (field: IField, utilityBelt: IUtilityBelt): JSX.Element => (
-      <div key={field.id} className="dynField">
-        <div className="dynLabelAndInput">{renderField(field, utilityBelt)}</div>
-        <div className="dynValidationErrors">{errorToElement(field.validationErrors)}</div>
-      </div>
-    ),
-    [renderField, errorToElement]
-  );
-
   const renderFields = useCallback(
-    (fields: IField[], utilityBelt: IUtilityBelt) => fields.map(field => <Fragment key={field.id}>{wrapField(field, utilityBelt)}</Fragment>),
+    (fields: IField[], utilityBelt: IUtilityBelt): JSX.Element[] => fields.map(field => <Fragment key={field.id}>{wrapField(field, utilityBelt)}</Fragment>),
     [wrapField]
   );
 
   const fetchOptions = useCallback(
     async (field: IField): Promise<IOption[]> => {
-      if (!field.optionsUrl) {
-        return field.options && field.options.length ? field.options : [];
-      }
+      if (!field.optionsUrl) return field.options || [];
       // optionsUrl trumps everything. With substitutions, a url is a set of urls so field.options isn't a valid cache.
       const url = field.optionsUrl.replaceAll(/\{[^}]+}/g, fieldId => {
         const f = findField(fieldId.replaceAll(/}|{/g, ""), theForm);
@@ -140,11 +145,13 @@ export const SuperDynamicForm = ({ submitButtonText, renderField, validate, form
   );
 
   const captureValueAndCheckConditions = useCallback(
-    async (field: IField /*& { failedValidations: string[] }*/, newValue: string) => {
+    async (field: IField, newValue: string): Promise<void> => {
       if (field.value == newValue) return; // loose == because there's little point re-rendering 5 vs "5"
       field.value = newValue;
-      field.validationErrors = validate(field, theForm);
+      const errs = validate(field, theForm);
+      field.validationErrors = errs && errs.length ? errs : undefined; // ensure the property is only truthy if errors are present
       if (!field.hasConditionalFields) return forceRender();
+      if (field.validationErrors) return forceRender(); // no point calling server when client-side validation fails
       setNumPendingPromises(x => x + 1);
       return postForm(theForm)
         .then(setTheForm)
@@ -155,7 +162,7 @@ export const SuperDynamicForm = ({ submitButtonText, renderField, validate, form
   );
 
   const submit = useCallback(
-    async (ev: React.FormEvent<HTMLFormElement>) => {
+    async (ev: React.FormEvent<HTMLFormElement>): Promise<void> => {
       ev.preventDefault();
       setNumPendingPromises(x => x + 1);
       return onSubmit(theForm)
@@ -167,9 +174,10 @@ export const SuperDynamicForm = ({ submitButtonText, renderField, validate, form
   );
 
   const utilityBelt: IUtilityBelt = { captureValueAndCheckConditions, fetchOptions, submit, forceRender, renderFields, errorToElement };
+  // end creating UtilityBelt ////
 
-  if (!formFields || !formFields.length) return errorToElement("The form has no fields in it.");
-  if (!theForm || !theForm.length) setTheForm(formFields); // initialization after useAsync(getDynamicForm) returns
+  if (!formFields || !formFields.length) return <div title="The form has no fields in it."></div>;
+  if (!theForm || !theForm.length) setTheForm(formFields); // set derived state from props
 
   return (
     <form onSubmit={submit} className="superDynamicForm">
