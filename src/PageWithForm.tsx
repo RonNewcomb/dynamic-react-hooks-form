@@ -1,24 +1,10 @@
 import { useCallback, useState } from "react";
 import { topbarColor, textColorInverse, textColor } from "./app";
-import { IField, ISuperDynamicFieldMaker } from "./SuperDynamicForm/SuperDynamicForm";
-import { SuperDynamicForm } from "./SuperDynamicForm/SuperDynamicForm";
+import { IField, SuperDynamicForm } from "./SuperDynamicForm/SuperDynamicForm";
 import { getDynamicForm, getOptions, pseudoSubmit, submitDynamicForm } from "./backend/api";
 import { Overlay } from "./util/Overlay";
 import { useAsync } from "./util/useAsync";
-import { DynFieldSet, DynGroup, DynInputField, DynRadioset, DynSubmitRow } from "./SuperDynamicForm/ConfigureSuperDynamicFields";
-import { Err } from "./util/Err";
-
-const config: Record<string, ISuperDynamicFieldMaker> = {
-  section: (field, utilityBelt) => <DynGroup field={field} fns={utilityBelt} />,
-  field_group: (field, utilityBelt) => <DynFieldSet field={field} fns={utilityBelt} />,
-  pick1: (field, utilityBelt) => <DynRadioset field={field} fns={utilityBelt} />,
-  separator: (field, utilityBelt) => <hr className="dynSeparator dynField" />,
-  text: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="text" />,
-  email: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="email" />,
-  number: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="number" />,
-  submit: (field, utilityBelt) => <DynSubmitRow field={field} fns={utilityBelt} />,
-  error: (field, _) => <Err>{field.label}</Err>,
-};
+import { defaultSwitchFn } from "./SuperDynamicForm/ConfigureSuperDynamicFields";
 
 export const PageWithForm = () => {
   const [result, setResult] = useState<IField[]>();
@@ -41,6 +27,7 @@ export const PageWithForm = () => {
       ) : (
         <Overlay if={isLoading || response.isLoading}>
           <SuperDynamicForm
+            switchFn={defaultSwitchFn}
             formFields={arrayOfFormFields || []}
             onLoading={setIsLoading}
             getOptions={getOptions}

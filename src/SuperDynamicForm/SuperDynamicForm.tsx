@@ -1,77 +1,71 @@
 import { useState, useMemo, useCallback, useEffect, Fragment } from "react";
 
+/** Only 3 properties are required for all field.type */
 export interface IField {
+  /** must be unique in the whole form */
   id: string;
+  /** goes into the switch statement of switchFn */
   type: string;
+  /** shown to user */
   label: string;
 
-  // raw value that user inputted into HTMLInputElement
-  // Sent to server on submit, sent & received from server on pseudoSubmit and maybe initial load as well
+  /** Raw value that user inputted into HTMLInputElement. Sent to server on submit, sent & received from server on pseudoSubmit and maybe initial load as well */
   value?: string;
 
-  // if type == 'field_group' or 'section' or other such aggregate
+  /** if type == 'field_group' or 'section' or other such aggregate */
   fields?: IField[];
 
-  // if type is 'pick1'
-  options?: IOption[]; // if blank, .optionsUrl must have URL to get list
-  optionsUrl?: string; // if blank, .options must have list
+  /** for dropdown or radioset types. If blank, .optionsUrl must have the URL to fetch the options */
+  options?: IOption[];
+  /** for dropdown or radioset types. If blank, .options must have the list already */
+  optionsUrl?: string;
 
-  // if true then requires pseudosubmit onChange
+  /** if true then requires pseudosubmit on this element's onChange or onBlur event, to fetch the conditional fields */
   hasConditionalFields?: boolean;
 }
 
 export interface IOption {
+  /** visible to user */
   label: string;
-  value?: string; // if missing, use label as value
+  /** if missing, label will be used as value */
+  value?: string;
 }
 
-export interface IUtilityBelt {
-  forceRender: () => void;
-  captureValueAndCheckConditions: (field: IField, newValue: string) => Promise<void>;
-  fetchOptions: (field: IField) => Promise<IOption[]>;
-  submit: (ev: React.FormEvent<HTMLFormElement>) => Promise<any>;
-}
-
-export type ISuperDynamicFieldMaker = (field: IField, utilityBelt: IUtilityBelt) => JSX.Element;
-
-let enumToElement: Record<string, ISuperDynamicFieldMaker> = {
-  error: f => <div className="error">{f.label}</div>,
-};
-
-export const configureEnumsToElements = (map: Record<string, ISuperDynamicFieldMaker>) => {
-  enumToElement = map;
-  if (!enumToElement.error) enumToElement.error = f => <div className="error">{f.label}</div>;
-};
-
-export const errorToElement = (str: string | Error | (Error | string)[]) => {
-  const array = Array.isArray(str) ? str : [str];
-  const strings = array.map(e => (e instanceof Error ? e.message : e));
-  const fields = strings.map(s => ({ label: s } as IField));
-  return <>{renderFields(fields, undefined as any)}</>;
-};
-
-export const renderField = (field: IField, utilityBelt: IUtilityBelt): JSX.Element => {
-  const makeElement = enumToElement[field.type];
-  return makeElement ? (
-    makeElement(field, utilityBelt)
-  ) : (
-    <div>Unknown field type {field.type}. Was configureEnumsToElements() called, or, props.config passed-in?</div>
-  );
-};
-
-export const renderFields = (fields: IField[], utilityBelt: IUtilityBelt) =>
-  fields.map((field, i) => <Fragment key={field.id || i}>{renderField(field, utilityBelt)}</Fragment>);
-
+/** the Props passed to SuperDynamicForm.  */
 interface IProps {
-  config?: Record<string, ISuperDynamicFieldMaker>; // or call configureEnumsToElements() once, like where ReactDOM.render() is called
+  /** the heart of any dynamic form solution is a big switch statement on a property from the server that says which component to use */
+  switchFn: (field: IField, utilityBelt: IUtilityBelt) => JSX.Element;
+  /** the array of IField objects from the server */
   formFields: IField[];
+  /** your function should fetch the options array from the server from this url (or url fragment) */
   getOptions: (url: string) => Promise<IOption[]>;
+  /** your function should POST (not submit) the whole form to the server, to receive the whole form back, with some fields added or removed */
   postForm: (form: IField[]) => Promise<IField[]>;
+  /** your function should SUBMIT the whole form to the server, and to receive validation errors back. Empty array means success but SuperDynamicForm really has nothing to do on success. */
   onSubmit: (form: IField[]) => Promise<string[]>;
+  /** callback to let parent component know when SuperDynamicForm is waiting on server data. You should probably place an overlay over the form. */
   onLoading?: (isLoading: boolean) => void;
+  /** text to show on the submit button. If blank, no submit is shown, and it's assumed one of the IFields from the server will tell the switchFn to render one. (Or more. Multiple submit buttons work like a set of radio buttons, with name=field.id and each value is different.) */
+  submitButtonText?: string;
 }
 
-export const SuperDynamicForm = ({ config, formFields, getOptions, postForm, onSubmit, onLoading }: IProps) => {
+/** functions passed to each of your Field Components in the switchFn.  */
+export interface IUtilityBelt {
+  /** forces a re-render of the whole form */
+  forceRender: () => void;
+  /** copies the value from the HTML Element into the model, runs validation, and asks server for conditional fields if needed */
+  captureValueAndCheckConditions: (field: IField, newValue: string) => Promise<void>;
+  /** get the options for a dropdown or radioset from the server. Url substitutions like {otherField.id} will be replaced with otherField.value */
+  fetchOptions: (field: IField) => Promise<IOption[]>;
+  /** in case the server is supplying its own submit buttons, which may even be nested deeply in .fields */
+  submit: (ev: React.FormEvent<HTMLFormElement>) => Promise<any>;
+  /** for IField.fields array */
+  renderFields: (fields: IField[], utilityBelt: IUtilityBelt) => JSX.Element[];
+  /** transforms a string or Error object to a field of type "error" with label as the string or .message */
+  errorToElement: (str: string | Error | (Error | string)[]) => JSX.Element;
+}
+
+export const SuperDynamicForm = ({ submitButtonText, switchFn, formFields, getOptions, postForm, onSubmit, onLoading }: IProps) => {
   log("RENDER SuperDynamicForm");
   const [numPendingPromises, setNumPendingPromises] = useState(0 /* excludes useAsync's promise */);
   const [theForm, setTheForm] = useState(formFields);
@@ -82,6 +76,28 @@ export const SuperDynamicForm = ({ config, formFields, getOptions, postForm, onS
   useEffect(() => onLoading && onLoading(numPendingPromises > 0), [numPendingPromises > 0]);
 
   const optionsCache = useMemo<Record<string, Promise<IOption[]>>>(() => ({}), []);
+
+  const renderField = useCallback(
+    (field: IField, utilityBelt: IUtilityBelt): JSX.Element => {
+      return switchFn ? switchFn(field, utilityBelt) : <div>Unknown field type {field.type}.</div>;
+    },
+    [switchFn]
+  );
+
+  const renderFields = useCallback(
+    (fields: IField[], utilityBelt: IUtilityBelt) => fields.map(field => <Fragment key={field.id}>{renderField(field, utilityBelt)}</Fragment>),
+    [renderField]
+  );
+
+  const errorToElement = useCallback(
+    (str: string | Error | (Error | string)[]) => {
+      const array = Array.isArray(str) ? str : [str];
+      const strings = array.map(e => (e instanceof Error ? e.message : e));
+      const fields = strings.map((label, i) => ({ label, id: i.toString(), type: "error" } as IField));
+      return <>{renderFields(fields, undefined as any)}</>;
+    },
+    [renderFields]
+  );
 
   const fetchOptions = useCallback(
     async (field: IField): Promise<IOption[]> => {
@@ -132,17 +148,16 @@ export const SuperDynamicForm = ({ config, formFields, getOptions, postForm, onS
     [theForm, onSubmit]
   );
 
-  const utilityBelt: IUtilityBelt = { captureValueAndCheckConditions, fetchOptions, submit, forceRender };
+  const utilityBelt: IUtilityBelt = { captureValueAndCheckConditions, fetchOptions, submit, forceRender, renderFields, errorToElement };
 
   if (!formFields || !formFields.length) return errorToElement("The form has no fields in it.");
   if (!theForm || !theForm.length) setTheForm(formFields); // initialization after useAsync(getDynamicForm) returns
-  if (config) enumToElement = config; // in case they didn't call configureEnumsToElements() from app.tsx or wherever
 
   return (
     <form onSubmit={submit} className="superDynamicForm">
       {renderFields(theForm, utilityBelt)}
       {formErrors && errorToElement(formErrors)}
-      {!theForm.some(f => f.type === "submit") && <button type="submit">Submit</button>}
+      {submitButtonText && <button type="submit">{submitButtonText}</button>}
       {log("/RENDER")}
     </form>
   );

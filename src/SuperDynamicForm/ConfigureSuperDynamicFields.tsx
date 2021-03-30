@@ -1,22 +1,6 @@
-import { IField, IOption, IUtilityBelt, renderFields, configureEnumsToElements } from "./SuperDynamicForm";
+import { IField, IOption, IUtilityBelt } from "./SuperDynamicForm";
 import { useAsync } from "../util/useAsync";
 import { Err } from "../util/Err";
-
-/** allowed values of IField.type */
-export type SuperDynamicFormFieldTypes = "section" | "field_group" | "pick1" | "text" | "email" | "number" | "separator" | "submit";
-
-/** mapping of IField.type to a component */
-configureEnumsToElements({
-  section: (field, utilityBelt) => <DynGroup field={field} fns={utilityBelt} />,
-  field_group: (field, utilityBelt) => <DynFieldSet field={field} fns={utilityBelt} />,
-  pick1: (field, utilityBelt) => <DynRadioset field={field} fns={utilityBelt} />,
-  separator: (field, utilityBelt) => <hr className="dynSeparator dynField" />,
-  text: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="text" />,
-  email: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="email" />,
-  number: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="number" />,
-  submit: (field, utilityBelt) => <DynSubmitRow field={field} fns={utilityBelt} />,
-  error: (field, _) => <Err>{field.label}</Err>,
-});
 
 interface IProps {
   field: IField;
@@ -27,17 +11,42 @@ interface IDynInputFieldProps extends IProps {
   type: "text" | "email" | "tel" | "url" | "number" | "password";
 }
 
+export const defaultSwitchFn = (field: IField, utilityBelt: IUtilityBelt): JSX.Element => {
+  switch (field.type) {
+    case "section":
+      return <DynGroup field={field} fns={utilityBelt} />;
+    case "field_group":
+      return <DynFieldSet field={field} fns={utilityBelt} />;
+    case "pick1":
+      return <DynRadioset field={field} fns={utilityBelt} />;
+    case "separator":
+      return <hr className="dynSeparator dynField" />;
+    case "text":
+      return <DynInputField field={field} fns={utilityBelt} type="text" />;
+    case "email":
+      return <DynInputField field={field} fns={utilityBelt} type="email" />;
+    case "number":
+      return <DynInputField field={field} fns={utilityBelt} type="number" />;
+    case "submit":
+      return <DynSubmitRow field={field} fns={utilityBelt} />;
+    case "error":
+      return <Err>{field.label}</Err>;
+    default:
+      return <Err>Unknown field type '{field.type}'</Err>;
+  }
+};
+
 export const DynGroup = ({ field, fns }: IProps) => (
   <div className="dynGroup dynField">
     <label>{field.label}</label>
-    <div>{renderFields(field.fields || [], fns)}</div>
+    <div>{fns.renderFields(field.fields || [], fns)}</div>
   </div>
 );
 
 export const DynFieldSet = ({ field, fns }: IProps) => (
   <fieldset className="dynFieldSet dynField">
     <legend>{field.label}</legend>
-    <div>{renderFields(field.fields || [], fns)}</div>
+    <div>{fns.renderFields(field.fields || [], fns)}</div>
   </fieldset>
 );
 
