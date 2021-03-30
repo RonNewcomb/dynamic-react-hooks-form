@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback, useEffect, Fragment } from "react";
 export interface IField {
   /** must be unique in the whole form */
   id: string;
-  /** goes into the switch statement of switchFn */
+  /** goes into the switch statement of renderField */
   type: string;
   /** shown to user */
   label: string;
@@ -22,8 +22,18 @@ export interface IField {
 
   /** if true then requires pseudosubmit on this element's onChange or onBlur event, to fetch the conditional fields */
   hasConditionalFields?: boolean;
+
+  /** Validation information.  How the server sends this is highly server-specific, so SuperDynamicForm merely accepts a function which "runs all validations for this field" */
+  required?: boolean;
+  minLength?: number;
+  minValue?: number | Date;
+  maxValue?: number | Date;
+
+  /** NOT SENT FROM SERVER. Holder for validation errors */
+  validationErrors?: string[];
 }
 
+/** see IField.options */
 export interface IOption {
   /** visible to user */
   label: string;
@@ -34,7 +44,9 @@ export interface IOption {
 /** the Props passed to SuperDynamicForm.  */
 interface IProps {
   /** the heart of any dynamic form solution is a big switch statement on a property from the server that says which component to use */
-  switchFn: (field: IField, utilityBelt: IUtilityBelt) => JSX.Element;
+  renderField: (field: IField, utilityBelt: IUtilityBelt) => JSX.Element;
+  /** function that takes a field, and the whole form, and returns validation errors */
+  validate: (field: IField, form: IField[]) => string[];
   /** the array of IField objects from the server */
   formFields: IField[];
   /** your function should fetch the options array from the server from this url (or url fragment) */
@@ -45,11 +57,11 @@ interface IProps {
   onSubmit: (form: IField[]) => Promise<string[]>;
   /** callback to let parent component know when SuperDynamicForm is waiting on server data. You should probably place an overlay over the form. */
   onLoading?: (isLoading: boolean) => void;
-  /** text to show on the submit button. If blank, no submit is shown, and it's assumed one of the IFields from the server will tell the switchFn to render one. (Or more. Multiple submit buttons work like a set of radio buttons, with name=field.id and each value is different.) */
+  /** text to show on the submit button. If blank, no submit is shown, and it's assumed one of the IFields from the server will tell the renderField to render one. (Or more. Multiple submit buttons work like a set of radio buttons, with name=field.id and each value is different.) */
   submitButtonText?: string;
 }
 
-/** functions passed to each of your Field Components in the switchFn.  */
+/** functions passed to each of your Field Components in the renderField.  */
 export interface IUtilityBelt {
   /** forces a re-render of the whole form */
   forceRender: () => void;
@@ -62,47 +74,52 @@ export interface IUtilityBelt {
   /** for IField.fields array */
   renderFields: (fields: IField[], utilityBelt: IUtilityBelt) => JSX.Element[];
   /** transforms a string or Error object to a field of type "error" with label as the string or .message */
-  errorToElement: (str: string | Error | (Error | string)[]) => JSX.Element;
+  errorToElement: (str: undefined | string | Error | (Error | string)[]) => JSX.Element;
 }
 
-export const SuperDynamicForm = ({ submitButtonText, switchFn, formFields, getOptions, postForm, onSubmit, onLoading }: IProps) => {
+export const SuperDynamicForm = ({ submitButtonText, renderField, validate, formFields, getOptions, postForm, onSubmit, onLoading }: IProps) => {
   log("RENDER SuperDynamicForm");
-  const [numPendingPromises, setNumPendingPromises] = useState(0 /* excludes useAsync's promise */);
+  const [numPendingPromises, setNumPendingPromises] = useState(0);
   const [theForm, setTheForm] = useState(formFields);
   const [formErrors, setFormErrors] = useState<undefined | Error | string | (string | Error)[]>();
-  const [render, setRender] = useState(0);
-  const forceRender = useCallback(() => setRender(x => x + 1), []);
+  const forceRender = useCallback(() => setTheForm(x => x.slice()), []);
 
   useEffect(() => onLoading && onLoading(numPendingPromises > 0), [numPendingPromises > 0]);
 
   const optionsCache = useMemo<Record<string, Promise<IOption[]>>>(() => ({}), []);
 
-  const renderField = useCallback(
-    (field: IField, utilityBelt: IUtilityBelt): JSX.Element => {
-      return switchFn ? switchFn(field, utilityBelt) : <div>Unknown field type {field.type}.</div>;
+  const errorToElement = useCallback(
+    (str: undefined | string | Error | (Error | string)[]) => {
+      if (!str) return <></>;
+      const array = Array.isArray(str) ? str : [str];
+      const strings = array.map(e => (e instanceof Error ? e.message : e)).filter(x => !!x);
+      const fields = strings.map((label, i) => ({ label, id: i.toString(), type: "error" } as IField));
+      return <>{fields.map(f => renderField(f, undefined as any))}</>;
     },
-    [switchFn]
-  );
-
-  const renderFields = useCallback(
-    (fields: IField[], utilityBelt: IUtilityBelt) => fields.map(field => <Fragment key={field.id}>{renderField(field, utilityBelt)}</Fragment>),
     [renderField]
   );
 
-  const errorToElement = useCallback(
-    (str: string | Error | (Error | string)[]) => {
-      const array = Array.isArray(str) ? str : [str];
-      const strings = array.map(e => (e instanceof Error ? e.message : e));
-      const fields = strings.map((label, i) => ({ label, id: i.toString(), type: "error" } as IField));
-      return <>{renderFields(fields, undefined as any)}</>;
-    },
-    [renderFields]
+  const wrapField = useCallback(
+    (field: IField, utilityBelt: IUtilityBelt): JSX.Element => (
+      <div key={field.id} className="dynField">
+        <div className="dynLabelAndInput">{renderField(field, utilityBelt)}</div>
+        <div className="dynValidationErrors">{errorToElement(field.validationErrors)}</div>
+      </div>
+    ),
+    [renderField, errorToElement]
+  );
+
+  const renderFields = useCallback(
+    (fields: IField[], utilityBelt: IUtilityBelt) => fields.map(field => <Fragment key={field.id}>{wrapField(field, utilityBelt)}</Fragment>),
+    [wrapField]
   );
 
   const fetchOptions = useCallback(
     async (field: IField): Promise<IOption[]> => {
-      if (field.options && field.options.length) return field.options;
-      if (!field.optionsUrl) return [];
+      if (!field.optionsUrl) {
+        return field.options && field.options.length ? field.options : [];
+      }
+      // optionsUrl trumps everything. With substitutions, a url is a set of urls so field.options isn't a valid cache.
       const url = field.optionsUrl.replaceAll(/\{[^}]+}/g, fieldId => {
         const f = findField(fieldId.replaceAll(/}|{/g, ""), theForm);
         return f ? f.value ?? "" : fieldId; // finding the field with a blank value !== not finding the field at all; maybe {hiMom} wasn't supposed to be a fieldId
@@ -123,9 +140,10 @@ export const SuperDynamicForm = ({ submitButtonText, switchFn, formFields, getOp
   );
 
   const captureValueAndCheckConditions = useCallback(
-    async (field: IField, newValue: string) => {
-      if (field.value == newValue) return; // loose == because little point re-rendering 5 vs "5"
+    async (field: IField /*& { failedValidations: string[] }*/, newValue: string) => {
+      if (field.value == newValue) return; // loose == because there's little point re-rendering 5 vs "5"
       field.value = newValue;
+      field.validationErrors = validate(field, theForm);
       if (!field.hasConditionalFields) return forceRender();
       setNumPendingPromises(x => x + 1);
       return postForm(theForm)
@@ -133,7 +151,7 @@ export const SuperDynamicForm = ({ submitButtonText, switchFn, formFields, getOp
         .catch(setFormErrors)
         .finally(() => setNumPendingPromises(x => x - 1));
     },
-    [theForm, postForm, forceRender]
+    [theForm, postForm, validate, forceRender]
   );
 
   const submit = useCallback(
@@ -141,7 +159,7 @@ export const SuperDynamicForm = ({ submitButtonText, switchFn, formFields, getOp
       ev.preventDefault();
       setNumPendingPromises(x => x + 1);
       return onSubmit(theForm)
-        .then(result => (result && result.length ? setFormErrors(result) : setFormErrors(undefined)))
+        .then(setFormErrors)
         .catch(setFormErrors)
         .finally(() => setNumPendingPromises(x => x - 1));
     },

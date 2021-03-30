@@ -4,7 +4,7 @@ import { IField, SuperDynamicForm } from "./SuperDynamicForm/SuperDynamicForm";
 import { getDynamicForm, getOptions, pseudoSubmit, submitDynamicForm } from "./backend/api";
 import { Overlay } from "./util/Overlay";
 import { useAsync } from "./util/useAsync";
-import { defaultSwitchFn } from "./SuperDynamicForm/ConfigureSuperDynamicFields";
+import { defaultRenderFields, defaultValidate } from "./SuperDynamicForm/ConfigureSuperDynamicFields";
 
 export const PageWithForm = () => {
   const [result, setResult] = useState<IField[]>();
@@ -27,7 +27,8 @@ export const PageWithForm = () => {
       ) : (
         <Overlay if={isLoading || response.isLoading}>
           <SuperDynamicForm
-            switchFn={defaultSwitchFn}
+            renderField={defaultRenderFields}
+            validate={defaultValidate}
             formFields={arrayOfFormFields || []}
             onLoading={setIsLoading}
             getOptions={getOptions}
@@ -51,7 +52,7 @@ export const PageWithForm = () => {
             display: flex;
             justify-content: space-around;
           }
-          .dynSubmitRow button {
+          .superDynamicForm button {
             padding: 5px 10px;
             border-radius: 0.7em / 50%;
             border: 0;

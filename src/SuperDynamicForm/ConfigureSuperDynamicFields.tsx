@@ -11,7 +11,7 @@ interface IDynInputFieldProps extends IProps {
   type: "text" | "email" | "tel" | "url" | "number" | "password";
 }
 
-export const defaultSwitchFn = (field: IField, utilityBelt: IUtilityBelt): JSX.Element => {
+export const defaultRenderFields = (field: IField, utilityBelt: IUtilityBelt): JSX.Element => {
   switch (field.type) {
     case "section":
       return <DynGroup field={field} fns={utilityBelt} />;
@@ -34,6 +34,13 @@ export const defaultSwitchFn = (field: IField, utilityBelt: IUtilityBelt): JSX.E
     default:
       return <Err>Unknown field type '{field.type}'</Err>;
   }
+};
+
+export const defaultValidate = (field: IField, form: IField[]): string[] => {
+  const errors = [];
+  if (field.required) errors.push(field.value == undefined || field.value == null ? "This field is required" : "");
+  if (field.minLength) errors.push(!!field.value && field.value.length >= field.minLength ? "" : `Please enter at least ${field.minLength} characters`);
+  return errors;
 };
 
 export const DynGroup = ({ field, fns }: IProps) => (
