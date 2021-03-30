@@ -6,6 +6,7 @@ import { getDynamicForm, getOptions, pseudoSubmit, submitDynamicForm } from "./b
 import { Overlay } from "./util/Overlay";
 import { useAsync } from "./util/useAsync";
 import { DynFieldSet, DynGroup, DynInputField, DynRadioset, DynSubmitRow } from "./SuperDynamicForm/ConfigureSuperDynamicFields";
+import { Err } from "./util/Err";
 
 const config: Record<string, ISuperDynamicFieldMaker> = {
   section: (field, utilityBelt) => <DynGroup field={field} fns={utilityBelt} />,
@@ -16,6 +17,7 @@ const config: Record<string, ISuperDynamicFieldMaker> = {
   email: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="email" />,
   number: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="number" />,
   submit: (field, utilityBelt) => <DynSubmitRow field={field} fns={utilityBelt} />,
+  error: (field, _) => <Err>{field.label}</Err>,
 };
 
 export const PageWithForm = () => {

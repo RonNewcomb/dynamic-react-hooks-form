@@ -15,6 +15,7 @@ configureEnumsToElements({
   email: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="email" />,
   number: (field, utilityBelt) => <DynInputField field={field} fns={utilityBelt} type="number" />,
   submit: (field, utilityBelt) => <DynSubmitRow field={field} fns={utilityBelt} />,
+  error: (field, _) => <Err>{field.label}</Err>,
 });
 
 interface IProps {

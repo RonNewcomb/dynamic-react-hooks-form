@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback, useEffect, Fragment } from "react";
-import { Err } from "../util/Err";
 
 export interface IField {
   id: string;
@@ -34,19 +33,37 @@ export interface IUtilityBelt {
 }
 
 export type ISuperDynamicFieldMaker = (field: IField, utilityBelt: IUtilityBelt) => JSX.Element;
-let enumToElement: Record<string, ISuperDynamicFieldMaker> = {};
-export const configureEnumsToElements = (map: Record<string, ISuperDynamicFieldMaker>) => (enumToElement = map);
+
+let enumToElement: Record<string, ISuperDynamicFieldMaker> = {
+  error: f => <div className="error">{f.label}</div>,
+};
+
+export const configureEnumsToElements = (map: Record<string, ISuperDynamicFieldMaker>) => {
+  enumToElement = map;
+  if (!enumToElement.error) enumToElement.error = f => <div className="error">{f.label}</div>;
+};
+
+export const errorToElement = (str: string | Error | (Error | string)[]) => {
+  const array = Array.isArray(str) ? str : [str];
+  const strings = array.map(e => (e instanceof Error ? e.message : e));
+  const fields = strings.map(s => ({ label: s } as IField));
+  return <>{renderFields(fields, undefined as any)}</>;
+};
 
 export const renderField = (field: IField, utilityBelt: IUtilityBelt): JSX.Element => {
   const makeElement = enumToElement[field.type];
-  return makeElement ? makeElement(field, utilityBelt) : <Err>Unknown field type {field.type}</Err>;
+  return makeElement ? (
+    makeElement(field, utilityBelt)
+  ) : (
+    <div>Unknown field type {field.type}. Was configureEnumsToElements() called, or, props.config passed-in?</div>
+  );
 };
 
 export const renderFields = (fields: IField[], utilityBelt: IUtilityBelt) =>
-  fields.map(field => <Fragment key={field.id}>{renderField(field, utilityBelt)}</Fragment>);
+  fields.map((field, i) => <Fragment key={field.id || i}>{renderField(field, utilityBelt)}</Fragment>);
 
 interface IProps {
-  config?: Record<string, ISuperDynamicFieldMaker>; // or call configureEnumsToElements() once
+  config?: Record<string, ISuperDynamicFieldMaker>; // or call configureEnumsToElements() once, like where ReactDOM.render() is called
   formFields: IField[];
   getOptions: (url: string) => Promise<IOption[]>;
   postForm: (form: IField[]) => Promise<IField[]>;
@@ -117,14 +134,14 @@ export const SuperDynamicForm = ({ config, formFields, getOptions, postForm, onS
 
   const utilityBelt: IUtilityBelt = { captureValueAndCheckConditions, fetchOptions, submit, forceRender };
 
-  if (!formFields || !formFields.length) return <Err>The form has no fields in it.</Err>;
+  if (!formFields || !formFields.length) return errorToElement("The form has no fields in it.");
   if (!theForm || !theForm.length) setTheForm(formFields); // initialization after useAsync(getDynamicForm) returns
   if (config) enumToElement = config; // in case they didn't call configureEnumsToElements() from app.tsx or wherever
 
   return (
     <form onSubmit={submit} className="superDynamicForm">
       {renderFields(theForm, utilityBelt)}
-      {formErrors && <Err errors={formErrors} />}
+      {formErrors && errorToElement(formErrors)}
       {!theForm.some(f => f.type === "submit") && <button type="submit">Submit</button>}
       {log("/RENDER")}
     </form>

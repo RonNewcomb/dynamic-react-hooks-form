@@ -24,8 +24,8 @@ export const Err = (props: PropsWithChildren<IProps>) => {
   return (
     <div className="error">
       {props.children}
-      {array.map(e => (
-        <div>{e instanceof Error ? e.message : e}</div>
+      {array.map((e, i) => (
+        <div key={i}>{e instanceof Error ? e.message : e}</div>
       ))}
     </div>
   );
