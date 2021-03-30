@@ -140,7 +140,8 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
     addField(s1g1, {
         label: "Last Name",
         type: "text",
-        id: "s1.g1.lastname"
+        id: "s1.g1.lastname",
+        required: true,
     });
     addField(s1, {
         label: "Email",
@@ -151,6 +152,14 @@ export const mockDataFromServer = (formAsIs?: IField[]) => {
         label: "Phone",
         type: "text",
         id: "s1.phone"
+    });
+    addField(s1, {
+        label: "Number of Dependents",
+        type: "number",
+        id: "s1.numDepents",
+        value: 3 as any,
+        minValue: 0,
+        required: true,
     });
     const where = addField(s1, {
         label: "Origin",

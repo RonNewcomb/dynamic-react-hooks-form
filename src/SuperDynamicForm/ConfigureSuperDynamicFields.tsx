@@ -38,8 +38,14 @@ export const defaultRenderFields = (field: IField, utilityBelt: IUtilityBelt): J
 
 export const defaultValidate = (field: IField, form: IField[]): string[] => {
   const errors = [];
-  if (field.required) errors.push(field.value == undefined || field.value == null ? "This field is required" : "");
-  if (field.minLength) errors.push(!!field.value && field.value.length >= field.minLength ? "" : `Please enter at least ${field.minLength} characters`);
+  if (field.required && (field.value == undefined || field.value === "")) errors.push("This field is required");
+  if (!!field.minLength && ["text", "email", "password"].includes(field.type) && !!field.value && field.value.length >= field.minLength)
+    errors.push(`Please enter at least ${field.minLength} characters`);
+  if (field.minValue != undefined && ["number"].includes(field.type) && field.value != undefined && parseInt(field.value) < (field.minValue as number))
+    errors.push(`Must be at least ${field.minValue}`);
+  if (field.maxValue != undefined && ["number"].includes(field.type) && field.value != undefined && parseInt(field.value) > (field.maxValue as number))
+    errors.push(`Must be at most ${field.maxValue}`);
+  console.log("validated", field.id, errors);
   return errors;
 };
 
@@ -61,6 +67,7 @@ export const DynInputField = ({ field, fns, type }: IDynInputFieldProps) => (
   <div className="dynInputField dynField">
     <label htmlFor={field.id}>{field.label}</label>
     <input type={type || "text"} id={field.id} name={field.id} value={field.value} onChange={e => fns.captureValueAndCheckConditions(field, e.target.value)} />
+    <div>{fns.errorToElement(field.validationErrors)}</div>
   </div>
 );
 
