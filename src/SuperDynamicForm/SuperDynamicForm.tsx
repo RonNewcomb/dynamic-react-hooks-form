@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback, useEffect, Fragment } from "react";
+import { useState, useMemo, useCallback, useEffect, Fragment, SetStateAction, Dispatch } from "react";
+import { useStateAsync, useUnlessUnmounted } from "../util/useAsync";
 
 /** Only 3 properties are required for all field.type */
 export interface IField {
@@ -85,7 +86,7 @@ export const SuperDynamicForm = ({ formFields, renderField, validate, getOptions
   const [formErrors, setFormErrors] = useState<undefined | Error | string | (string | Error)[]>();
 
   // track server calls & inform parent component
-  const [numPendingPromises, setNumPendingPromises] = useState(0);
+  let [numPendingPromises, setNumPendingPromises] = useStateAsync(0);
   useEffect(() => onLoading && onLoading(numPendingPromises > 0), [numPendingPromises > 0]);
 
   // cache all HTTP GET server calls

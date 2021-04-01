@@ -1,22 +1,26 @@
+import * as React from "react";
+import { useState } from "react";
+import { FilePage } from "./FilePage";
+import { PageWithExample } from "./PageWithExample";
 import { PageWithForm } from "./PageWithForm";
 
-export const App = () => (
-  <>
-    <nav>
-      <div>File</div>
-      <div>Edit</div>
-      <div>About</div>
-    </nav>
-    <aside>
-      <div>Left sidebar</div>
-      <div>Item 2</div>
-    </aside>
-    <main>
-      <PageWithForm />
-    </main>
-    <footer>&copy; ~~~ ~~ ~~~~ ~~ </footer>
-    <style>
-      {`
+export const App = () => {
+  const [tab, setTab] = useState(2);
+  return (
+    <>
+      <nav>
+        <div onClick={_ => setTab(1)}>File</div>
+        <div onClick={_ => setTab(2)}>Edit</div>
+        <div onClick={_ => setTab(3)}>About</div>
+      </nav>
+      <aside>
+        <div>Left sidebar</div>
+        <div>Item 2</div>
+      </aside>
+      <main>{tab === 1 ? <FilePage /> : tab == 2 ? <PageWithForm /> : <PageWithExample />}</main>
+      <footer>&copy; ~~~ ~~ ~~~~ ~~ </footer>
+      <style>
+        {`
         body {
           font-family: Verdana, sans-serif;
           font: menu;
@@ -29,8 +33,14 @@ export const App = () => (
           background-color: ${topbarColor};
           color: ${textColorInverse};
         }
-        nav > * {
+        nav > div {
           padding: 0 16px;
+        }
+        nav > div:hover {
+          background-color: ${ambientColor};
+          color: ${textColor};
+          border-radius: 10px;
+          cursor: pointer;
         }
         aside {
           float: left;
@@ -53,9 +63,10 @@ export const App = () => (
           margin: 16px;
         }
       `}
-    </style>
-  </>
-);
+      </style>
+    </>
+  );
+};
 export const leftSidebarWidth = 120;
 export const ambientColor = "tan";
 export const topbarColor = "#333";
