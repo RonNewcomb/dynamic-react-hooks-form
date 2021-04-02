@@ -22,12 +22,7 @@ export function useUnlessUnmounted<T>(useStateTuple: [val: T, setVal: Dispatch<S
 }
 
 /** Like useState, but if the component unmounts, will ignore any setValue calls */
-export function useStateAsync<T>(initialState: T | (() => T)): [T, Dispatch<SetStateAction<T>>] {
-  const [val, setVal] = useState(initialState);
-  const [isMounted, setIsMounted] = useState(true);
-  useEffect(() => () => setIsMounted(false), []);
-  return [val, newVal => (isMounted ? setVal(newVal) : () => void 0)];
-}
+export const useStateAsync = <T>(initialState: T | (() => T)): [T, Dispatch<SetStateAction<T>>] => useUnlessUnmounted(useState(initialState));
 
 /** 
  * Parameters are your gettor function followed by your gettor's parameters.

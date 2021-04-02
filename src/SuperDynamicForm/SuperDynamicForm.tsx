@@ -88,6 +88,7 @@ export const SuperDynamicForm = ({ formFields, renderField, validate, getOptions
   // track server calls & inform parent component
   let [numPendingPromises, setNumPendingPromises] = useStateAsync(0);
   useEffect(() => onLoading && onLoading(numPendingPromises > 0), [numPendingPromises > 0]);
+  useEffect(() => () => (setNumPendingPromises = () => undefined) && undefined, []);
 
   // cache all HTTP GET server calls
   const optionsCache = useMemo<Record<string, Promise<IOption[]>>>(() => ({}), []); // url -> promise-of-results
