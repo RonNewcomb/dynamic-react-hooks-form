@@ -2,6 +2,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDebounce } from './useDebounce';
 
+export interface UseAsyncOptions<T> {
+  /** controls whether asyncFn simply being reference-inequal will trigger a reload */
+  asyncFnNeedsUseCallback?: boolean;
+  /** if not a truthy value, your async function isn't called  */
+  if?: boolean | any;
+  /** default value to use while initial loading, or if "if" prevented invocation  */
+  else?: T;
+  /** debounce timer, default 100ms */
+  debounceTime?: number;
+}
+
+type UseAsyncReturnValue<T> = [T | undefined, boolean, Error | undefined, (() => void) | undefined];
+
 /**
  * Calls the async function  if a value in the dep array changed.
  * Returns tuple of [data from async promise, isLoading, error, forceRetry()]
@@ -11,23 +24,15 @@ import { useDebounce } from './useDebounce';
  *   if = if false, will not call the asyncFn. Useful if necessary values aren't yet provided.
  *   else = the default value to use for when the asyncFn is loading or never yet called.
  */
-export const useAsync = <T, A extends any[]>(
-  asyncFn: (...rest: A) => Promise<T>,
-  depArray: A,
-  options?: {
-    /** controls whether asyncFn simply being reference-inequal will trigger a reload */
-    asyncFnNeedsUseCallback?: boolean;
-    /** if not a truthy value, your async function isn't called  */
-    if?: boolean | any;
-    /** default value to use while initial loading, or if "if" prevented invocation  */
-    else?: T;
-    /** debounce timer, default 100ms */
-    debounceTime?: number;
-  }
-) => {
-  const [result, setResult] = useState<[T?, boolean?, Error?]>([
+export const useAsync = <T, A extends unknown[]>(
+  asyncFn: (...depArrayBecomesParams: [...A]) => Promise<T>,
+  depArray: [...A],
+  options?: UseAsyncOptions<T>
+): UseAsyncReturnValue<T> => {
+  const [result, setResult] = useState<UseAsyncReturnValue<T>>(() => [
     options?.else,
     !options || !Object.prototype.hasOwnProperty.call(options, 'if') || !!options.if,
+    undefined,
     undefined,
   ]);
   const newInput = useMemo(() => depArray, depArray); // note this is depArray not [depArray]
@@ -35,18 +40,17 @@ export const useAsync = <T, A extends any[]>(
 
   const reload = useCallback(() => {
     if (options && Object.prototype.hasOwnProperty.call(options, 'if') && !options.if) return;
-    let latest = true;
-    setResult([result[0], true, undefined]); // don't clear out Data on new call; makes UX less jumpy
+    let latest: true | undefined = true;
+    setResult([result[0], true, undefined, undefined]); // don't clear out Data on new call; makes UX less jumpy
     asyncFn
       .call(void 0, ...depArray)
-      .then(data => latest && setResult([data, false, undefined]))
-      .catch(err => latest && setResult([options?.else, false, err]));
-    return () => {
-      latest = false;
-    };
+      .then(data => latest && setResult([data, false, undefined, undefined]))
+      .catch(err => latest && setResult([options?.else, false, err, undefined]));
+    return () => (latest = undefined);
   }, [changedInput, asyncFn]);
 
   useEffect(reload, options?.asyncFnNeedsUseCallback ? [changedInput, asyncFn] : [changedInput]);
 
-  return (result as any[]).concat(reload) as [T | undefined, boolean, Error | undefined, () => void];
+  result[3] = reload; // not using .concat() keeps the returned value reference-equal to previous render
+  return result;
 };
