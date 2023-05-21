@@ -13,7 +13,7 @@ export interface UseAsyncOptions<T> {
   debounceTime?: number;
 }
 
-type UseAsyncReturnValue<T> = [T | undefined, boolean, Error | undefined, (() => void) | undefined];
+type UseAsyncReturnValue<T> = [T | undefined, boolean, Error | undefined, () => void];
 
 /**
  * Calls the async function  if a value in the dep array changed.
@@ -27,29 +27,25 @@ type UseAsyncReturnValue<T> = [T | undefined, boolean, Error | undefined, (() =>
 export const useAsync = <T, A extends unknown[]>(
   asyncFn: (...depArrayBecomesParams: [...A]) => Promise<T>,
   depArray: [...A],
-  options?: UseAsyncOptions<T>
+  options: UseAsyncOptions<T> = {}
 ): UseAsyncReturnValue<T> => {
-  const [result, setResult] = useState<UseAsyncReturnValue<T>>(() => [
-    options?.else,
-    !options || !Object.prototype.hasOwnProperty.call(options, 'if') || !!options.if,
-    undefined,
-    undefined,
-  ]);
+  const options_if = !Object.prototype.hasOwnProperty.call(options, 'if') || !!options.if;
+  const [result, setResult] = useState<UseAsyncReturnValue<T>>(() => [options.else, options_if, undefined, undefined as any]);
   const newInput = useMemo(() => depArray, depArray); // note this is depArray not [depArray]
-  const changedInput = useDebounce(newInput, options?.debounceTime || 100);
+  const changedInput = useDebounce(newInput, options.debounceTime || 100);
 
   const reload = useCallback(() => {
-    if (options && Object.prototype.hasOwnProperty.call(options, 'if') && !options.if) return;
+    if (!options_if) return;
     let latest: true | undefined = true;
-    setResult([result[0], true, undefined, undefined]); // don't clear out Data on new call; makes UX less jumpy
+    setResult(old => [old[0], true, undefined, undefined as any]); // don't clear out Data on new call; makes UX less jumpy
     asyncFn
       .call(void 0, ...depArray)
-      .then(data => latest && setResult([data, false, undefined, undefined]))
-      .catch(err => latest && setResult([options?.else, false, err, undefined]));
+      .then(data => latest && setResult([data, false, undefined, undefined as any]))
+      .catch(err => latest && setResult([options.else, false, err, undefined as any]));
     return () => (latest = undefined);
-  }, [changedInput, asyncFn]);
+  }, [changedInput, asyncFn, options_if]);
 
-  useEffect(reload, options?.asyncFnNeedsUseCallback ? [changedInput, asyncFn] : [changedInput]);
+  useEffect(reload, options.asyncFnNeedsUseCallback ? [changedInput, asyncFn] : [changedInput]);
 
   result[3] = reload; // not using .concat() keeps the returned value reference-equal to previous render
   return result;
